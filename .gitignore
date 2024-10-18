@@ -1,0 +1,11 @@
+__pycache__/
+*.bak
+*.aux
+*.pdf
+*.gz
+# Ignore temporary files
+*.tmp
+*.swp
+
+# Ignore log files
+*.log
