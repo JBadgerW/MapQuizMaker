@@ -1,15 +1,18 @@
 import tkinter as tk
 from tkinter import filedialog, ttk
 from PIL import Image, ImageTk
+import math
 
 class ImageClickApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Image Click Location Calculator")
+        self.root.title("Map Quiz Maker")
 
         self.img_width = 0
         self.img_height = 0
         self.scale_factor = 1
+        self.quiz_locations = []
+        self.dot_radius = 5
 
         # Create a button to load the image
         load_button = tk.Button(root, text="Load Image", command=self.load_image)
@@ -40,12 +43,12 @@ class ImageClickApp:
         self.result_label.pack()
 
         # Bind the click event to the canvas
-        self.canvas.bind("<Button-1>", self.calculate_percentage)
+        self.canvas.bind("<Button-1>", self.on_canvas_click)
 
     def on_canvas_configure(self, event):
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
-    def calculate_percentage(self, event):
+    def on_canvas_click(self, event):
         if self.img_width == 0 or self.img_height == 0:
             return  # No image loaded
 
@@ -61,6 +64,42 @@ class ImageClickApp:
         y_location = round(y_percentage * self.img_height_cm, 1)
         
         self.result_label.config(text=f"Clicked at: ({x_location:.1f} cm, {y_location:.1f} cm)")
+
+        # Check if we clicked on an existing dot
+        clicked_item = self.canvas.find_closest(x_scroll, y_scroll)
+        if clicked_item and self.canvas.type(clicked_item[0]) == "oval":
+            # Check if the click is within the dot
+            dot_coords = self.canvas.coords(clicked_item[0])
+            dot_center_x = (dot_coords[0] + dot_coords[2]) / 2
+            dot_center_y = (dot_coords[1] + dot_coords[3]) / 2
+            distance = math.sqrt((x_scroll - dot_center_x)**2 + (y_scroll - dot_center_y)**2)
+            
+            if distance <= self.dot_radius:
+                # Remove the dot
+                self.canvas.delete(clicked_item[0])
+                
+                # Find and remove the corresponding location
+                closest_location = min(self.quiz_locations, 
+                                       key=lambda loc: abs(loc[0] - x_location) + abs(loc[1] - y_location))
+                self.quiz_locations.remove(closest_location)
+                print(f"Removed location: {closest_location}")
+            else:
+                # Click was not close enough to the dot center, treat as a new dot
+                self.add_new_dot(x_scroll, y_scroll, x_location, y_location)
+        else:
+            # Add a new dot and location
+            self.add_new_dot(x_scroll, y_scroll, x_location, y_location)
+
+        print("Current quiz locations:", self.quiz_locations)
+
+    def add_new_dot(self, x_scroll, y_scroll, x_location, y_location):
+        dot = self.canvas.create_oval(
+            x_scroll - self.dot_radius, y_scroll - self.dot_radius,
+            x_scroll + self.dot_radius, y_scroll + self.dot_radius,
+            fill="red", outline="red"
+        )
+        self.quiz_locations.append((x_location, y_location))
+        print(f"Added new location: ({x_location:.1f}, {y_location:.1f})")
 
     def load_image(self):
         file_path = filedialog.askopenfilename(filetypes=[("Image files", "*.jpg *.jpeg *.png *.bmp *.gif")])
@@ -92,7 +131,8 @@ class ImageClickApp:
             # Update canvas scroll region
             self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
-            self.result_label.config(text="Click on the image to calculate percentages")
+            self.result_label.config(text="Click on the image to add or remove quiz locations")
+            self.quiz_locations = []  # Reset quiz locations when loading a new image
 
 # Create the main window and start the app
 root = tk.Tk()
