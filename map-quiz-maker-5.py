@@ -61,12 +61,16 @@ class ImageClickApp:
         answer_label = tk.Label(self.right_frame, text="Answers", font=("Arial", 14, "bold"))
         answer_label.pack(pady=10)
 
+        # Create a frame to hold the answer canvas and scrollbar
+        self.answer_frame = ttk.Frame(self.right_frame)
+        self.answer_frame.pack(fill=tk.BOTH, expand=True)
+
         # Create a canvas for the answer list
-        self.answer_canvas = tk.Canvas(self.right_frame)
+        self.answer_canvas = tk.Canvas(self.answer_frame)
         self.answer_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         # Add a scrollbar for the answer list
-        self.answer_scrollbar = ttk.Scrollbar(self.right_frame, orient=tk.VERTICAL, command=self.answer_canvas.yview)
+        self.answer_scrollbar = ttk.Scrollbar(self.answer_frame, orient=tk.VERTICAL, command=self.answer_canvas.yview)
         self.answer_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         # Configure the answer canvas
@@ -79,6 +83,7 @@ class ImageClickApp:
 
         # Bind the answer list frame to update scroll region
         self.answer_list_frame.bind('<Configure>', self.on_answer_frame_configure)
+
 
     def on_canvas_configure(self, event):
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
