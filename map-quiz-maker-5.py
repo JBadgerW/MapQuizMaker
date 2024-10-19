@@ -294,6 +294,8 @@ class ImageClickApp:
             "!IMAGE_FILE!", self.image_file_path).replace(
             "!NODES_AND_LABELS!", nodes_and_labels).replace(
             "!QUESTIONS_AND_ANSWERS!", questions_and_answers)
+        
+        template_content_answers = template_content.replace('%answers,', 'answers,')
 
         # Create output folder if it doesn't exist
         output_dir = 'tex_output'
@@ -305,6 +307,12 @@ class ImageClickApp:
         output_path = os.path.join(output_dir, output_filename)
         with open(output_path, 'w') as output_file:
             output_file.write(template_content)
+
+        # Write to answer file
+        output_filename = f"{self.class_entry.get()}_{self.title_entry.get()}_{self.version_entry.get()}_ANSWERS.tex"
+        output_path = os.path.join(output_dir, output_filename)
+        with open(output_path, 'w') as output_file:
+            output_file.write(template_content_answers)
 
         print(f"Quiz saved to {output_path}")
 
