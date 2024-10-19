@@ -1,6 +1,8 @@
 import tkinter as tk
 from tkinter import filedialog, ttk
 from PIL import Image, ImageTk
+import os
+import random
 
 class ImageClickApp:
     def __init__(self, root):
@@ -12,6 +14,7 @@ class ImageClickApp:
         self.scale_factor = 1
         self.quiz_locations = []
         self.next_number = 1
+        self.image_file_path = None
 
         # Configure root window's grid
         self.root.columnconfigure(0, weight=1)
@@ -76,15 +79,25 @@ class ImageClickApp:
 
         # Configure right_frame grid
         self.right_frame.columnconfigure(0, weight=1)
-        self.right_frame.rowconfigure(1, weight=1)
+        self.right_frame.rowconfigure(5, weight=1)
+
+        # Add input fields for class, title, version, and instructions
+        self.class_entry = self.create_label_entry(self.right_frame, "Class:", 0)
+        self.title_entry = self.create_label_entry(self.right_frame, "Title:", 1)
+        self.version_entry = self.create_label_entry(self.right_frame, "Version:", 2)
+        self.instructions_entry = self.create_label_entry(self.right_frame, "Instructions:", 3)
+
+        # Create a button to build the quiz
+        build_button = tk.Button(self.right_frame, text="Build Quiz", command=self.build_quiz)
+        build_button.grid(row=4, column=0, pady=10)
 
         # Create a label for the answer list
         answer_label = tk.Label(self.right_frame, text="Answers", font=("Arial", 12))
-        answer_label.grid(row=0, column=0, pady=10)
+        answer_label.grid(row=5, column=0, pady=10)
 
         # Create a frame to hold the answer canvas and scrollbar
         self.answer_frame = ttk.Frame(self.right_frame)
-        self.answer_frame.grid(row=1, column=0, sticky='nsew')
+        self.answer_frame.grid(row=6, column=0, sticky='nsew')
 
         # Configure answer_frame grid
         self.answer_frame.columnconfigure(0, weight=1)
@@ -108,6 +121,13 @@ class ImageClickApp:
 
         # Bind the answer list frame to update scroll region
         self.answer_list_frame.bind('<Configure>', self.on_answer_frame_configure)
+
+    def create_label_entry(self, parent, label_text, row):
+        label = ttk.Label(parent, text=label_text)
+        label.grid(row=row, column=0, sticky='w', padx=5)
+        entry = ttk.Entry(parent)
+        entry.grid(row=row, column=0, sticky='e', padx=5, pady=2)
+        return entry
 
     def on_canvas_configure(self, event):
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
@@ -235,9 +255,57 @@ class ImageClickApp:
             self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
             self.result_label.config(text="Click on the image to add or remove quiz locations")
+            self.image_file_path = file_path
             self.quiz_locations = []  # Reset quiz locations when loading a new image
             self.next_number = 1  # Reset numbering when loading a new image
             self.update_answer_list()  # Clear the answer list
+
+    def build_quiz(self):
+        if not self.image_file_path:
+            print("No image loaded!")
+            return
+
+        # Randomize the order of quiz locations
+        random.shuffle(self.quiz_locations)
+
+        # Create TikZ nodes for the labels
+        nodes_and_labels = "\n".join(
+            f"\\node at ({x}, {y}) {{\\textbf{{{number}}}}};"
+            for number, x, y, _ in self.quiz_locations
+        )
+
+        # Create questions and answers
+        questions_and_answers = "\n".join(
+            f"\\question\\MatchQuestion{{{answer}}}{{}} \\vfill"
+            for _, _, _, answer in self.quiz_locations
+        )
+
+        # Read template
+        template_path = os.path.join(os.path.dirname(__file__), 'Image_Overlay_Worksheet_Template.py')
+        with open(template_path, 'r') as template_file:
+            template_content = template_file.read()
+
+        # Replace placeholders in the template
+        template_content = template_content.replace("!CLASS!", self.class_entry.get())
+        template_content = template_content.replace("!TITLE!", self.title_entry.get())
+        template_content = template_content.replace("!VERSION!", self.version_entry.get())
+        template_content = template_content.replace("!INSTRUCTIONS!", self.instructions_entry.get())
+        template_content = template_content.replace("!IMAGE_FILE!", self.image_file_path)
+        template_content = template_content.replace("!NODES_AND_LABELS!", nodes_and_labels)
+        template_content = template_content.replace("!QUESTIONS_AND_ANSWERS!", questions_and_answers)
+
+        # Create output folder if it doesn't exist
+        output_dir = 'tex_output'
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+
+        # Write to output file
+        output_filename = f"{self.class_entry.get()}_{self.title_entry.get()}_{self.version_entry.get()}.tex"
+        output_path = os.path.join(output_dir, output_filename)
+        with open(output_path, 'w') as output_file:
+            output_file.write(template_content)
+
+        print(f"Quiz saved to {output_path}")
 
 # Create the main window and start the app
 root = tk.Tk()

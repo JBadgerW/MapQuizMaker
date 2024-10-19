@@ -1,4 +1,4 @@
-WORKSHEET_TEMPLATE = r"""
+
 \documentclass[
 letterpaper,
 11pt,
@@ -86,4 +86,3 @@ answers,
 
 \end{questions}
 \end{document}
-"""
