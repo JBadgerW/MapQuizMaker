@@ -12,7 +12,8 @@ class ImageClickApp:
         self.img_height = 0
         self.scale_factor = 1
         self.quiz_locations = []
-        self.dot_radius = 5
+        self.label_radius = 10
+        self.next_number = 1
 
         # Create a button to load the image
         load_button = tk.Button(root, text="Load Image", command=self.load_image)
@@ -65,41 +66,34 @@ class ImageClickApp:
         
         self.result_label.config(text=f"Clicked at: ({x_location:.1f} cm, {y_location:.1f} cm)")
 
-        # Check if we clicked on an existing dot
-        clicked_item = self.canvas.find_closest(x_scroll, y_scroll)
-        if clicked_item and self.canvas.type(clicked_item[0]) == "oval":
-            # Check if the click is within the dot
-            dot_coords = self.canvas.coords(clicked_item[0])
-            dot_center_x = (dot_coords[0] + dot_coords[2]) / 2
-            dot_center_y = (dot_coords[1] + dot_coords[3]) / 2
-            distance = math.sqrt((x_scroll - dot_center_x)**2 + (y_scroll - dot_center_y)**2)
-            
-            if distance <= self.dot_radius:
-                # Remove the dot
-                self.canvas.delete(clicked_item[0])
+        # Check if we clicked on an existing label
+        clicked_items = self.canvas.find_overlapping(x_scroll-5, y_scroll-5, x_scroll+5, y_scroll+5)
+        for item in clicked_items:
+            if self.canvas.type(item) == "text":
+                # Remove the label
+                number = int(self.canvas.itemcget(item, 'text'))
+                self.canvas.delete(item)
                 
-                # Find and remove the corresponding location
-                closest_location = min(self.quiz_locations, 
-                                       key=lambda loc: abs(loc[0] - x_location) + abs(loc[1] - y_location))
-                self.quiz_locations.remove(closest_location)
-                print(f"Removed location: {closest_location}")
-            else:
-                # Click was not close enough to the dot center, treat as a new dot
-                self.add_new_dot(x_scroll, y_scroll, x_location, y_location)
-        else:
-            # Add a new dot and location
-            self.add_new_dot(x_scroll, y_scroll, x_location, y_location)
+                # Remove the corresponding location
+                self.quiz_locations = [loc for loc in self.quiz_locations if loc[2] != number]
+                print(f"Removed location number {number}")
+                return
+
+        # If we didn't click on an existing label, add a new one
+        self.add_new_label(x_scroll, y_scroll, x_location, y_location)
 
         print("Current quiz locations:", self.quiz_locations)
 
-    def add_new_dot(self, x_scroll, y_scroll, x_location, y_location):
-        dot = self.canvas.create_oval(
-            x_scroll - self.dot_radius, y_scroll - self.dot_radius,
-            x_scroll + self.dot_radius, y_scroll + self.dot_radius,
-            fill="red", outline="red"
+    def add_new_label(self, x_scroll, y_scroll, x_location, y_location):
+        label = self.canvas.create_text(
+            x_scroll, y_scroll,
+            text=str(self.next_number),
+            fill="red",
+            font=("Arial", 12, "bold")
         )
-        self.quiz_locations.append((x_location, y_location))
-        print(f"Added new location: ({x_location:.1f}, {y_location:.1f})")
+        self.quiz_locations.append((x_location, y_location, self.next_number))
+        print(f"Added new location {self.next_number}: ({x_location:.1f}, {y_location:.1f})")
+        self.next_number += 1
 
     def load_image(self):
         file_path = filedialog.askopenfilename(filetypes=[("Image files", "*.jpg *.jpeg *.png *.bmp *.gif")])
@@ -133,6 +127,7 @@ class ImageClickApp:
 
             self.result_label.config(text="Click on the image to add or remove quiz locations")
             self.quiz_locations = []  # Reset quiz locations when loading a new image
+            self.next_number = 1  # Reset the numbering when loading a new image
 
 # Create the main window and start the app
 root = tk.Tk()
