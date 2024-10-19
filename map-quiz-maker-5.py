@@ -270,8 +270,8 @@ class ImageClickApp:
 
         # Create TikZ nodes for the labels
         nodes_and_labels = "\n".join(
-            f"\\node at ({x}, {y}) {{\\textbf{{{number}}}}};"
-            for number, x, y, _ in self.quiz_locations
+            f"\\node at ({x}, {y}) {{\\textbf{{{index + 1}}}}};"
+            for index, (number, x, y, _) in enumerate(self.quiz_locations)
         )
 
         # Create questions and answers
