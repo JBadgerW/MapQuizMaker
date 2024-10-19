@@ -54,23 +54,19 @@ class ImageClickApp:
 
         # Create a frame for the right side (answer list) with fixed width
         self.right_frame = ttk.Frame(self.main_frame, width=380)
-        self.right_frame.pack(side=tk.RIGHT, fill=tk.Y)
+        self.right_frame.pack(side=tk.RIGHT, fill=tk.BOTH)
         self.right_frame.pack_propagate(False)  # Prevent the frame from shrinking
 
         # Create a label for the answer list
         answer_label = tk.Label(self.right_frame, text="Answers", font=("Arial", 14, "bold"))
         answer_label.pack(pady=10)
 
-        # Create a frame to hold the answer list and its scrollbar
-        self.answer_frame = ttk.Frame(self.right_frame)
-        self.answer_frame.pack(fill=tk.BOTH, expand=True)
-
         # Create a canvas for the answer list
-        self.answer_canvas = tk.Canvas(self.answer_frame)
+        self.answer_canvas = tk.Canvas(self.right_frame)
         self.answer_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         # Add a scrollbar for the answer list
-        self.answer_scrollbar = ttk.Scrollbar(self.answer_frame, orient=tk.VERTICAL, command=self.answer_canvas.yview)
+        self.answer_scrollbar = ttk.Scrollbar(self.right_frame, orient=tk.VERTICAL, command=self.answer_canvas.yview)
         self.answer_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         # Configure the answer canvas
@@ -79,15 +75,19 @@ class ImageClickApp:
 
         # Create a frame inside the canvas to hold the answer list items
         self.answer_list_frame = ttk.Frame(self.answer_canvas)
-        self.answer_canvas.create_window((0, 0), window=self.answer_list_frame, anchor=tk.NW)
+        self.answer_list_window = self.answer_canvas.create_window((0, 0), window=self.answer_list_frame, anchor=tk.NW)
+
+        # Bind the answer list frame to update scroll region
+        self.answer_list_frame.bind('<Configure>', self.on_answer_frame_configure)
 
     def on_canvas_configure(self, event):
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
     def on_answer_canvas_configure(self, event):
+        self.answer_canvas.itemconfig(self.answer_list_window, width=event.width)
+
+    def on_answer_frame_configure(self, event):
         self.answer_canvas.configure(scrollregion=self.answer_canvas.bbox("all"))
-        # Update the width of the answer list frame to match the canvas
-        self.answer_canvas.itemconfig(self.answer_canvas.find_withtag("all")[0], width=event.width)
 
     def on_canvas_click(self, event):
         if self.img_width == 0 or self.img_height == 0:
