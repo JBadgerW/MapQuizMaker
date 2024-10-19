@@ -1,7 +1,6 @@
 import tkinter as tk
 from tkinter import filedialog, ttk
 from PIL import Image, ImageTk
-import math
 
 class ImageClickApp:
     def __init__(self, root):
@@ -12,7 +11,6 @@ class ImageClickApp:
         self.img_height = 0
         self.scale_factor = 1
         self.quiz_locations = []
-        self.label_radius = 10
         self.next_number = 1
 
         # Create a button to load the image
@@ -71,11 +69,11 @@ class ImageClickApp:
         for item in clicked_items:
             if self.canvas.type(item) == "text":
                 # Remove the label
-                number = int(self.canvas.itemcget(item, 'text'))
+                number = self.canvas.itemcget(item, 'text')
                 self.canvas.delete(item)
                 
                 # Remove the corresponding location
-                self.quiz_locations = [loc for loc in self.quiz_locations if loc[2] != number]
+                self.quiz_locations = [loc for loc in self.quiz_locations if loc[0] != number]
                 print(f"Removed location number {number}")
                 return
 
@@ -85,14 +83,15 @@ class ImageClickApp:
         print("Current quiz locations:", self.quiz_locations)
 
     def add_new_label(self, x_scroll, y_scroll, x_location, y_location):
+        label_text = str(self.next_number)
         label = self.canvas.create_text(
             x_scroll, y_scroll,
-            text=str(self.next_number),
+            text=label_text,
             fill="red",
             font=("Arial", 12, "bold")
         )
-        self.quiz_locations.append((x_location, y_location, self.next_number))
-        print(f"Added new location {self.next_number}: ({x_location:.1f}, {y_location:.1f})")
+        self.quiz_locations.append((label_text, x_location, y_location))
+        print(f"Added new location {label_text}: ({x_location:.1f}, {y_location:.1f})")
         self.next_number += 1
 
     def load_image(self):
