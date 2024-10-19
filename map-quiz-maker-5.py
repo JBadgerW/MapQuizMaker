@@ -286,13 +286,14 @@ class ImageClickApp:
             template_content = template_file.read()
 
         # Replace placeholders in the template
-        template_content = template_content.replace("!CLASS!", self.class_entry.get())
-        template_content = template_content.replace("!TITLE!", self.title_entry.get())
-        template_content = template_content.replace("!VERSION!", self.version_entry.get())
-        template_content = template_content.replace("!INSTRUCTIONS!", self.instructions_entry.get())
-        template_content = template_content.replace("!IMAGE_FILE!", self.image_file_path)
-        template_content = template_content.replace("!NODES_AND_LABELS!", nodes_and_labels)
-        template_content = template_content.replace("!QUESTIONS_AND_ANSWERS!", questions_and_answers)
+        template_content = template_content.replace(
+            "!CLASS!", self.class_entry.get()).replace(
+            "!TITLE!", self.title_entry.get()).replace(
+            "!VERSION!", self.version_entry.get()).replace(
+            "!INSTRUCTIONS!", self.instructions_entry.get()).replace(
+            "!IMAGE_FILE!", self.image_file_path).replace(
+            "!NODES_AND_LABELS!", nodes_and_labels).replace(
+            "!QUESTIONS_AND_ANSWERS!", questions_and_answers)
 
         # Create output folder if it doesn't exist
         output_dir = 'tex_output'
