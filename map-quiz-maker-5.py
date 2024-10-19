@@ -281,7 +281,7 @@ class ImageClickApp:
         )
 
         # Read template
-        template_path = os.path.join(os.path.dirname(__file__), 'Image_Overlay_Worksheet_Template.py')
+        template_path = os.path.join(os.path.dirname(__file__), 'Image_Overlay_Worksheet_Template.tex')
         with open(template_path, 'r') as template_file:
             template_content = template_file.read()
 
