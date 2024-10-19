@@ -13,65 +13,90 @@ class ImageClickApp:
         self.quiz_locations = []
         self.next_number = 1
 
+        # Configure root window's grid
+        self.root.columnconfigure(0, weight=1)
+        self.root.rowconfigure(0, weight=1)
+
         # Create a main frame to hold everything
         self.main_frame = ttk.Frame(root)
-        self.main_frame.pack(fill=tk.BOTH, expand=True)
+        self.main_frame.grid(row=0, column=0, sticky='nsew')
+
+        # Configure main_frame grid
+        self.main_frame.columnconfigure(0, weight=1)
+        self.main_frame.columnconfigure(1, weight=0)
+        self.main_frame.rowconfigure(0, weight=1)
 
         # Create a frame for the left side (image and controls)
         self.left_frame = ttk.Frame(self.main_frame)
-        self.left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.left_frame.grid(row=0, column=0, sticky='nsew')
+
+        # Configure left_frame grid
+        self.left_frame.columnconfigure(0, weight=1)
+        self.left_frame.rowconfigure(1, weight=1)  # Canvas frame will expand
 
         # Create a button to load the image
         load_button = tk.Button(self.left_frame, text="Load Image", command=self.load_image)
-        load_button.pack(pady=10)
+        load_button.grid(row=0, column=0, pady=10)
 
         # Create a frame to hold the canvas and scrollbars
         self.canvas_frame = ttk.Frame(self.left_frame)
-        self.canvas_frame.pack(fill=tk.BOTH, expand=True)
+        self.canvas_frame.grid(row=1, column=0, sticky='nsew')
+
+        # Configure canvas_frame grid
+        self.canvas_frame.columnconfigure(0, weight=1)
+        self.canvas_frame.rowconfigure(0, weight=1)
 
         # Create a canvas for the image
         self.canvas = tk.Canvas(self.canvas_frame)
-        self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.canvas.grid(row=0, column=0, sticky='nsew')
 
         # Add vertical scrollbar for the canvas
         self.v_scrollbar = ttk.Scrollbar(self.canvas_frame, orient=tk.VERTICAL, command=self.canvas.yview)
-        self.v_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.v_scrollbar.grid(row=0, column=1, sticky='ns')
 
         # Add horizontal scrollbar for the canvas
         self.h_scrollbar = ttk.Scrollbar(self.left_frame, orient=tk.HORIZONTAL, command=self.canvas.xview)
-        self.h_scrollbar.pack(fill=tk.X)
+        self.h_scrollbar.grid(row=2, column=0, sticky='ew')
 
-        # Configure the canvas
+        # Configure the canvas scroll commands
         self.canvas.configure(yscrollcommand=self.v_scrollbar.set, xscrollcommand=self.h_scrollbar.set)
         self.canvas.bind('<Configure>', self.on_canvas_configure)
 
         # Create a label to display results
         self.result_label = tk.Label(self.left_frame, text="Load an image to begin", pady=10)
-        self.result_label.pack()
+        self.result_label.grid(row=3, column=0)
 
         # Bind the click event to the canvas
         self.canvas.bind("<Button-1>", self.on_canvas_click)
 
         # Create a frame for the right side (answer list) with fixed width
         self.right_frame = ttk.Frame(self.main_frame, width=380)
-        self.right_frame.pack(side=tk.RIGHT, fill=tk.BOTH)
-        self.right_frame.pack_propagate(False)  # Prevent the frame from shrinking
+        self.right_frame.grid(row=0, column=1, sticky='ns')
+        self.right_frame.grid_propagate(False)  # Prevent the frame from shrinking
+
+        # Configure right_frame grid
+        self.right_frame.columnconfigure(0, weight=1)
+        self.right_frame.rowconfigure(1, weight=1)
 
         # Create a label for the answer list
-        answer_label = tk.Label(self.right_frame, text="Answers", font=("Arial", 14))
-        answer_label.pack(pady=10)
+        answer_label = tk.Label(self.right_frame, text="Answers", font=("Arial", 12))
+        answer_label.grid(row=0, column=0, pady=10)
 
         # Create a frame to hold the answer canvas and scrollbar
         self.answer_frame = ttk.Frame(self.right_frame)
-        self.answer_frame.pack(fill=tk.BOTH, expand=True)
+        self.answer_frame.grid(row=1, column=0, sticky='nsew')
+
+        # Configure answer_frame grid
+        self.answer_frame.columnconfigure(0, weight=1)
+        self.answer_frame.rowconfigure(0, weight=1)
 
         # Create a canvas for the answer list
         self.answer_canvas = tk.Canvas(self.answer_frame)
-        self.answer_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.answer_canvas.grid(row=0, column=0, sticky='nsew')
 
         # Add a scrollbar for the answer list
         self.answer_scrollbar = ttk.Scrollbar(self.answer_frame, orient=tk.VERTICAL, command=self.answer_canvas.yview)
-        self.answer_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.answer_scrollbar.grid(row=0, column=1, sticky='ns')
 
         # Configure the answer canvas
         self.answer_canvas.configure(yscrollcommand=self.answer_scrollbar.set)
@@ -83,7 +108,6 @@ class ImageClickApp:
 
         # Bind the answer list frame to update scroll region
         self.answer_list_frame.bind('<Configure>', self.on_answer_frame_configure)
-
 
     def on_canvas_configure(self, event):
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
@@ -132,7 +156,7 @@ class ImageClickApp:
 
     def add_new_label(self, x_scroll, y_scroll, x_location, y_location):
         label_text = str(self.next_number)
-        label = self.canvas.create_text(
+        self.canvas.create_text(
             x_scroll, y_scroll,
             text=label_text,
             fill="red",
@@ -148,11 +172,17 @@ class ImageClickApp:
         for widget in self.answer_list_frame.winfo_children():
             widget.destroy()
 
+        # Configure answer_list_frame to expand horizontally
+        self.answer_list_frame.columnconfigure(0, weight=1)
+
         # Populate the answer list with the current quiz locations
-        for number, x, y, answer in self.quiz_locations:
+        for idx, (number, x, y, answer) in enumerate(self.quiz_locations):
             frame = ttk.Frame(self.answer_list_frame)
-            frame.pack(fill=tk.X, padx=5, pady=2)
-            frame.columnconfigure(1, weight=1)  # Make the second column (entry) expandable
+            frame.grid(row=idx, column=0, sticky='ew', padx=5, pady=2)
+
+            # Configure the frame to expand horizontally
+            frame.columnconfigure(0, weight=0)  # Label column (fixed size)
+            frame.columnconfigure(1, weight=1)  # Entry column (expandable)
 
             label = ttk.Label(frame, text=f"{number}:", width=5)
             label.grid(row=0, column=0, sticky="w")
@@ -166,6 +196,7 @@ class ImageClickApp:
         self.answer_list_frame.update_idletasks()
         self.answer_canvas.configure(scrollregion=self.answer_canvas.bbox("all"))
 
+
     def update_answer(self, number, new_answer):
         for i, (num, x, y, _) in enumerate(self.quiz_locations):
             if num == number:
@@ -178,7 +209,7 @@ class ImageClickApp:
         if file_path:
             image = Image.open(file_path)
             self.img_width, self.img_height = image.size
-            self.img_width_cm = 17.78  # 17.78 is \textwidth in LaTeX worksheet (i.e. 7")
+            self.img_width_cm = 17.78  # 17.78 is \textwidth in LaTeX worksheet (i.e., 7")
             self.img_height_cm = self.img_width_cm * self.img_height / self.img_width
 
             # Get screen dimensions
@@ -205,7 +236,7 @@ class ImageClickApp:
 
             self.result_label.config(text="Click on the image to add or remove quiz locations")
             self.quiz_locations = []  # Reset quiz locations when loading a new image
-            self.next_number = 1  # Reset the numbering when loading a new image
+            self.next_number = 1  # Reset numbering when loading a new image
             self.update_answer_list()  # Clear the answer list
 
 # Create the main window and start the app
