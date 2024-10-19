@@ -58,7 +58,7 @@ class ImageClickApp:
         self.right_frame.pack_propagate(False)  # Prevent the frame from shrinking
 
         # Create a label for the answer list
-        answer_label = tk.Label(self.right_frame, text="Answers", font=("Arial", 14, "bold"))
+        answer_label = tk.Label(self.right_frame, text="Answers", font=("Arial", 14))
         answer_label.pack(pady=10)
 
         # Create a frame to hold the answer canvas and scrollbar
