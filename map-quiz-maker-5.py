@@ -3,6 +3,7 @@ from tkinter import filedialog, ttk
 from PIL import Image, ImageTk
 import os
 import random
+import re
 
 class ImageClickApp:
     def __init__(self, root):
@@ -302,15 +303,17 @@ class ImageClickApp:
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
 
+        # Make output filename
+        output_filename = f"{self.class_entry.get()}_{self.title_entry.get()}_{self.version_entry.get()}"
+        output_filename = re.sub("\s", "_", output_filename)
+
         # Write to output file
-        output_filename = f"{self.class_entry.get()}_{self.title_entry.get()}_{self.version_entry.get()}.tex"
-        output_path = os.path.join(output_dir, output_filename)
+        output_path = os.path.join(output_dir, output_filename + ".tex")
         with open(output_path, 'w') as output_file:
             output_file.write(template_content)
 
         # Write to answer file
-        output_filename = f"{self.class_entry.get()}_{self.title_entry.get()}_{self.version_entry.get()}_ANSWERS.tex"
-        output_path = os.path.join(output_dir, output_filename)
+        output_path = os.path.join(output_dir, output_filename + "_ANSWERS.tex")
         with open(output_path, 'w') as output_file:
             output_file.write(template_content_answers)
 
