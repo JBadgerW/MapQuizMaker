@@ -4,6 +4,7 @@ from PIL import Image, ImageTk
 import os
 import random
 import re
+import shutil
 
 class ImageClickApp:
     def __init__(self, root):
@@ -266,6 +267,23 @@ class ImageClickApp:
             print("No image loaded!")
             return
 
+        # Ensure output directory exists
+        output_dir = 'tex_output'
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+
+        # Extract the image filename
+        image_filename = os.path.basename(self.image_file_path)
+        image_output_path = os.path.join(output_dir, image_filename)
+
+        # Copy image to tex_output if it doesn't already exist
+        if not os.path.exists(image_output_path):
+            shutil.copy(self.image_file_path, image_output_path)
+            print(f"Image copied to {image_output_path}")
+
+        # Update the LaTeX to point to the copied image
+        latex_image_path = image_filename  # LaTeX should refer to just the filename
+
         # Randomize the order of quiz locations
         random.shuffle(self.quiz_locations)
 
@@ -292,16 +310,11 @@ class ImageClickApp:
             "!TITLE!", self.title_entry.get()).replace(
             "!VERSION!", self.version_entry.get()).replace(
             "!INSTRUCTIONS!", self.instructions_entry.get()).replace(
-            "!IMAGE_FILE!", self.image_file_path).replace(
+            "!IMAGE_FILE!", latex_image_path).replace(
             "!NODES_AND_LABELS!", nodes_and_labels).replace(
             "!QUESTIONS_AND_ANSWERS!", questions_and_answers)
         
         template_content_answers = template_content.replace('%answers,', 'answers,')
-
-        # Create output folder if it doesn't exist
-        output_dir = 'tex_output'
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
 
         # Make output filename
         output_filename = f"{self.class_entry.get()}_{self.title_entry.get()}_{self.version_entry.get()}"
@@ -313,11 +326,12 @@ class ImageClickApp:
             output_file.write(template_content)
 
         # Write to answer file
-        output_path = os.path.join(output_dir, output_filename + "_ANSWERS.tex")
-        with open(output_path, 'w') as output_file:
+        output_path_answers = os.path.join(output_dir, output_filename + "_ANSWERS.tex")
+        with open(output_path_answers, 'w') as output_file:
             output_file.write(template_content_answers)
 
-        print(f"Quiz saved to {output_path}")
+        print(f"Quiz saved to {output_path} and {output_path_answers}")
+
 
 # Create the main window and start the app
 root = tk.Tk()
