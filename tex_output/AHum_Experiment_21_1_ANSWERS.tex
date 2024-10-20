@@ -2,7 +2,7 @@
 \documentclass[
 letterpaper,
 11pt,
-%answers,
+answers,
 ]{exam}
 
 \usepackage[lmargin=0.75in,rmargin=0.75in,tmargin=1in,bmargin=1in]{geometry}
@@ -46,10 +46,10 @@ letterpaper,
 }
 
 % Defines the titles and instructions for the worksheet or test
-\newcommand{\class}{!CLASS!}
-\newcommand{\wstitle}{!TITLE!}
-\newcommand{\wsVer}{!VERSION!}
-\newcommand{\Instructions}{!INSTRUCTIONS!}
+\newcommand{\class}{AHum}
+\newcommand{\wstitle}{Experiment 21}
+\newcommand{\wsVer}{1}
+\newcommand{\Instructions}{Identify the features marked.}
 
 % Sets the running header at the top of the subsequent pages
 \pagestyle{head}
@@ -64,11 +64,16 @@ letterpaper,
 \noindent
 \begin{tikzpicture}
     % Include the image
-    \node[anchor=south west,inner sep=0] at (0,0) {\includegraphics[width=\textwidth]{!IMAGE_FILE!}};
+    \node[anchor=south west,inner sep=0] at (0,0) {\includegraphics[width=\textwidth]{C:/Users/jonat/Documents/Coding/MapQuizMaker/blankGreekmap.jpg}};
 
     % Overlay text at specific coordinates
     %\node at (1, 1) {\textbf{LABEL}};  % (1, 1) is location (in cm) of LABEL on the map/image
-    !NODES_AND_LABELS!
+    \node at (5.3, 8.9) {\textbf{1}};
+\node at (14.2, 7.1) {\textbf{2}};
+\node at (12.2, 11.2) {\textbf{3}};
+\node at (5.3, 6.0) {\textbf{4}};
+\node at (7.9, 7.4) {\textbf{5}};
+\node at (9.9, 1.2) {\textbf{6}};
 
 \end{tikzpicture}
 %}
@@ -81,7 +86,12 @@ letterpaper,
 
 \begin{multicols}{2}
     % \question\MatchQuestion{ANSWER}{PROMPT} \vfill
-    !QUESTIONS_AND_ANSWERS!
+    \question\MatchQuestion{Boeotia}{} \vfill
+\question\MatchQuestion{Ionia}{} \vfill
+\question\MatchQuestion{Troy}{} \vfill
+\question\MatchQuestion{Pelopponesus}{} \vfill
+\question\MatchQuestion{Attika}{} \vfill
+\question\MatchQuestion{Krete}{} \vfill
 \end{multicols}
 
 \end{questions}
