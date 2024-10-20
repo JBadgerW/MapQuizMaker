@@ -1,7 +1,8 @@
-I am a big fan of paper quizzes and also the practice of giving students as many
-cracks at any particular formative assessment as they need to get the answers
-right. But I also want them randomized to eliminate as much as possible the
-memorization of a particular instrument.
+I am a high school teacher in math and humanities. I am a big fan of paper 
+quizzes and also the practice of giving students as many cracks at any parti-
+cular formative assessment as they need to get the answers right. But I also 
+want them randomized to eliminate as much as possible the memorization of a 
+particular instrument.
 
 The point of this little script is to import a map, allow the teacher to click
 around at various points on the map, and create a question for each one of the
