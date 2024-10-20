@@ -299,6 +299,12 @@ class ImageClickApp:
             for _, _, _, answer in self.quiz_locations
         )
 
+        # Create answers for the second page key
+        answers_for_key = "\n".join(
+            f"\\item {answer}"
+            for _, _, _, answer in self.quiz_locations
+        )
+
         # Read template
         template_path = os.path.join(os.path.dirname(__file__), 'Image_Overlay_Worksheet_Template.tex')
         with open(template_path, 'r') as template_file:
@@ -312,7 +318,8 @@ class ImageClickApp:
             "!INSTRUCTIONS!", self.instructions_entry.get()).replace(
             "!IMAGE_FILE!", latex_image_path).replace(
             "!NODES_AND_LABELS!", nodes_and_labels).replace(
-            "!QUESTIONS_AND_ANSWERS!", questions_and_answers)
+            "!QUESTIONS_AND_ANSWERS!", questions_and_answers).replace(
+            "!ANSWERS_FOR_KEY!", answers_for_key)
         
         template_content_answers = template_content.replace('%answers,', 'answers,')
 
@@ -325,12 +332,17 @@ class ImageClickApp:
         with open(output_path, 'w') as output_file:
             output_file.write(template_content)
 
-        # Write to answer file
-        output_path_answers = os.path.join(output_dir, output_filename + "_ANSWERS.tex")
-        with open(output_path_answers, 'w') as output_file:
-            output_file.write(template_content_answers)
+        # All the below commented-out code was to save a second copy that would be an
+        # answer key. But I think I would rather have a second page of the document be 
+        # an attached answer key. Not 100% sure, though, hence the mere commenting out.
 
-        print(f"Quiz saved to {output_path} and {output_path_answers}")
+        # Write to answer file
+        #output_path_answers = os.path.join(output_dir, output_filename + "_ANSWERS.tex")
+        #with open(output_path_answers, 'w') as output_file:
+        #    output_file.write(template_content_answers)
+
+        #print(f"Quiz saved to {output_path} and {output_path_answers}")
+        print(f"Quiz saved to {output_path}.")
 
 
 # Create the main window and start the app
