@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import filedialog, ttk
+from tkinter import simpledialog
 from PIL import Image, ImageTk
 import os
 import random
@@ -261,6 +262,8 @@ class ImageClickApp:
             self.quiz_locations = []  # Reset quiz locations when loading a new image
             self.next_number = 1  # Reset numbering when loading a new image
             self.update_answer_list()  # Clear the answer list
+
+
 
     def build_quiz(self):
         if not self.image_file_path:
