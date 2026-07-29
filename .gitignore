@@ -1,5 +1,5 @@
 __pycache__/
-tex_output/
+output/
 *.bak
 *.aux
 *.pdf
