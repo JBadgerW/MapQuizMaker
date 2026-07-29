@@ -45,12 +45,21 @@
 #let marker-overlay(image-info, markers) = box(width: image-info.width-cm * 1cm, {
   image(image-info.filename, width: 100%)
   for m in markers {
-    place(
-      top + left,
-      dx: m.x-cm * 1cm,
-      dy: (image-info.height-cm - m.y-cm) * 1cm,
-      text(weight: "bold")[#m.display-number],
-    )
+    let label = text(weight: "bold")[#m.display-number]
+    // `place(top+left, dx:, dy:)` anchors the label's top-left corner at
+    // (dx, dy). The app's historical TikZ/Tkinter placement centers the
+    // label ON the clicked point instead, so its size is measured and
+    // subtracted by half to match -- otherwise every marker prints shifted
+    // down and to the right of where it was actually placed.
+    context {
+      let size = measure(label)
+      place(
+        top + left,
+        dx: m.x-cm * 1cm - size.width / 2,
+        dy: (image-info.height-cm - m.y-cm) * 1cm - size.height / 2,
+        label,
+      )
+    }
   }
 })
 
