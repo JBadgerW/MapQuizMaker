@@ -3,6 +3,10 @@ TODOs for MapQuizMaker
 
 - [ ] (7/29) Needs refactoring to use Pathlib.
 
+- [ ] (7/29) I want to significantly simplify the files that make up the app.
+I want to lean on uv for package management, etc, and bring the file names and
+duties into line with standard Python best-practices.
+
 - [ ] (7/29) I don't particularly like the basic Tkinter look. Advise on 
 tkinter styling templates that might be nice to look at.
 
