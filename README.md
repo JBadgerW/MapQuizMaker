@@ -36,22 +36,50 @@ on which fonts happen to be present.
 
 ## How it works
 
-1. Load an image.
-2. Click on the image to mark a location; click an existing marker again to
-   remove it (remaining markers renumber automatically).
-3. Type the answer for each marker in the answer list.
-4. Fill in Class / Title / Instructions, and optionally set the number of
-   versions, whether to save each as its own file, and whether to include a
-   word bank. Instructions print above the map; leave the field blank to
-   omit them.
-5. Click "Save Quiz". A worksheet + answer-key PDF is generated and
-   auto-compiled via the bundled [Typst](https://typst.app/) engine (no
-   LaTeX install required), then a dialog tells you what was written and
-   offers to open it.
+1. Load a map image.
+2. Click the map to mark a location, then type its answer. Markers renumber
+   themselves automatically.
+3. Drag a marker to move it, keeping its number and answer. Right-click a
+   marker, press Delete, or use the × in the answer list to remove one.
+   Ctrl+Z undoes any of it.
+4. Fill in Class / Author / Title / Instructions, and optionally set the
+   number of versions, whether to save each as its own file, and whether to
+   include a word bank. Instructions print above the map; leave the field
+   blank to omit them.
+5. **Save** (Ctrl+S) keeps your work as an `.etqw` file you can reopen and
+   edit later.
+6. **Build Quiz PDF** (Ctrl+B) generates the shuffled versions and compiles
+   them via the bundled [Typst](https://typst.app/) engine (no LaTeX install
+   required), then tells you what was written and offers to open it.
+
+Selecting a location in one view highlights it in the other, so with thirty
+markers you can still tell which row belongs to which point on the map.
+
+## The `.etqw` file format
+
+Quizzes are saved as `.etqw`, the same format used by my
+`test_worksheet_generator` app, so a map quiz can be opened there and its
+subsection dropped into a larger test or exam.
+
+A saved quiz is one etqw document holding a single `fill_in_the_blank`
+subsection: the map is the subsection's image stimulus and each location is
+one question, with its answer inline in the stem as a `{{answer}}` marker.
+The app's "include word bank" checkbox is the subsection's `show_word_bank`.
+
+Two images travel inside the bundle. The stimulus (`map.png`) has the
+numbers already drawn on it, because etqw renders an image as-is and has no
+notion of a marker; the clean original travels beside it so this app can
+reopen the document and move a marker. The marker coordinates ride in an
+`x_mapquiz` key on the stimulus, which the etqw schemas accept and the etqw
+app ignores.
+
+One consequence worth knowing: **a quiz opened and re-saved in the etqw app
+loses its marker positions**, coming back as a plain image-stimulus
+subsection. etqw is the consumer; edit map quizzes here.
 
 ## Where quizzes are saved
 
-"Save Quiz" writes to `~/Documents/Map Quizzes` the first time. After that it
+"Build Quiz PDF" writes to `~/Documents/Map Quizzes` the first time. After that it
 reuses whichever folder you last saved to, so "Save As..." to a different
 folder becomes the new default. The remembered folder is kept in a small
 settings file (`~/.config/map-quiz-maker/settings.json` on Linux, the

@@ -1,46 +1,71 @@
+"""Class / Author / Title / Instructions, written straight to the document."""
+
 from tkinter import ttk
 from tkinter.scrolledtext import ScrolledText
 
-import ttkbootstrap as ttkb
+FIELDS = [
+    ("class_name", "Class:"),
+    ("author", "Author:"),
+    ("title", "Title:"),
+]
 
 
 class DetailsFormPanel:
-    """Class/Title/Instructions fields plus Save Quiz / Save As buttons."""
+    """Quiz metadata. Every field writes through on edit, so the document is
+    always current and no 'flush before build' step is needed.
 
-    def __init__(self, parent, on_save, on_save_as):
+    Author and Class become the etqw manifest's `author` and `course`.
+    """
+
+    def __init__(self, parent, on_changed):
+        self.on_changed = on_changed
+        self._loading = False
+
         self.frame = ttk.LabelFrame(parent, text="Quiz Details")
         self.frame.columnconfigure(1, weight=1)
 
-        self.class_entry = self._add_entry_row(0, "Class:")
-        self.title_entry = self._add_entry_row(1, "Title:")
+        self.entries = {}
+        for row, (field, label_text) in enumerate(FIELDS):
+            ttk.Label(self.frame, text=label_text, width=12, anchor="e").grid(
+                row=row, column=0, sticky="e", padx=5, pady=4
+            )
+            entry = ttk.Entry(self.frame)
+            entry.grid(row=row, column=1, sticky="ew", padx=5, pady=4)
+            entry.bind("<KeyRelease>", lambda _e, f=field: self._changed(f))
+            self.entries[field] = entry
 
-        instructions_label = ttk.Label(self.frame, text="Instructions:", width=12, anchor="e")
-        instructions_label.grid(row=2, column=0, sticky="ne", padx=5, pady=4)
+        instructions_row = len(FIELDS)
+        ttk.Label(self.frame, text="Instructions:", width=12, anchor="e").grid(
+            row=instructions_row, column=0, sticky="ne", padx=5, pady=4
+        )
+        self.instructions_text = ScrolledText(self.frame, height=4, width=1, wrap="word")
+        self.instructions_text.grid(
+            row=instructions_row, column=1, sticky="nsew", padx=5, pady=4
+        )
+        self.instructions_text.bind("<KeyRelease>", lambda _e: self._changed("instructions"))
 
-        self.instructions_text = ScrolledText(self.frame, height=5, width=1, wrap="word")
-        self.instructions_text.grid(row=2, column=1, sticky="nsew", padx=5, pady=4)
+    def _changed(self, field: str) -> None:
+        if self._loading:
+            return
+        self.on_changed(**{field: self._read(field)})
 
-        button_frame = ttk.Frame(self.frame)
-        button_frame.grid(row=3, column=0, columnspan=2, pady=10)
+    def _read(self, field: str) -> str:
+        if field == "instructions":
+            return self.instructions_text.get("1.0", "end-1c")
+        return self.entries[field].get()
 
-        save_button = ttkb.Button(button_frame, text="Save Quiz", command=on_save, bootstyle="success")
-        save_button.grid(row=0, column=0, padx=(0, 6))
-
-        save_as_button = ttkb.Button(button_frame, text="Save As...", command=on_save_as, bootstyle="secondary")
-        save_as_button.grid(row=0, column=1)
-
-    def _add_entry_row(self, row, label_text):
-        label = ttk.Label(self.frame, text=label_text, width=12, anchor="e")
-        label.grid(row=row, column=0, sticky="e", padx=5, pady=4)
-        entry = ttk.Entry(self.frame)
-        entry.grid(row=row, column=1, sticky="ew", padx=5, pady=4)
-        return entry
-
-    def get_class(self) -> str:
-        return self.class_entry.get()
-
-    def get_title(self) -> str:
-        return self.title_entry.get()
-
-    def get_instructions(self) -> str:
-        return self.instructions_text.get("1.0", "end-1c")
+    def load(self, meta) -> None:
+        """Replaces the visible values from `meta` without echoing back."""
+        self._loading = True
+        try:
+            for field, _ in FIELDS:
+                entry = self.entries[field]
+                value = getattr(meta, field)
+                if entry.get() != value:
+                    entry.delete(0, "end")
+                    entry.insert(0, value)
+            if self.instructions_text.get("1.0", "end-1c") != meta.instructions:
+                self.instructions_text.delete("1.0", "end")
+                self.instructions_text.insert("1.0", meta.instructions)
+        finally:
+            self._loading = False

@@ -25,4 +25,7 @@ packages = ["src/map_quiz_maker"]
 [dependency-groups]
 dev = [
     "pytest>=8",
+    # Only for the .etqw conformance tests, which validate a saved quiz
+    # against the etqw project's own schemas using its own loader.
+    "jsonschema>=4",
 ]

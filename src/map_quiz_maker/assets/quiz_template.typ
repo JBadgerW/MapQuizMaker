@@ -6,12 +6,13 @@
 //   (
 //     class: str, title: str, version: str, instructions: str,
 //     image: (filename: str, width-cm: float, height-cm: float),
-//     markers: ((display-number: int, x-cm: float, y-cm: float, answer: str), ..),
+//     markers: ((display-number: int, x: float, y: float, answer: str), ..),
 //     word-bank: (str, ..),  // empty array when not requested
 //   )
-// marker (x-cm, y-cm) use a bottom-left origin (matching the app's historical
-// TikZ/LaTeX convention); this template flips y to Typst's top-down `place()`
-// convention via `dy: (image.height-cm - marker.y-cm) * 1cm`.
+// marker (x, y) are fractions of the image in 0..1, with a top-left origin --
+// the same convention as the canvas the teacher clicks on and as Typst's own
+// `place()`. Earlier versions stored centimetres with a bottom-left origin
+// and flipped y here, which is what put labels in the wrong place once.
 //
 // Page/text/header styling follows self-contained-ws-template-1.0.typ (the
 // author's shared worksheet style: uniform 0.75in margin, Linux Libertine O
@@ -55,8 +56,8 @@
       let size = measure(label)
       place(
         top + left,
-        dx: m.x-cm * 1cm - size.width / 2,
-        dy: (image-info.height-cm - m.y-cm) * 1cm - size.height / 2,
+        dx: m.x * image-info.width-cm * 1cm - size.width / 2,
+        dy: m.y * image-info.height-cm * 1cm - size.height / 2,
         label,
       )
     }

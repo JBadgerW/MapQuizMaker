@@ -22,9 +22,10 @@ def build_version_dict(
     markers,
     word_bank=None,
 ) -> dict:
-    """`markers` is an iterable of objects with .x_cm/.y_cm/.answer (e.g.
-    map_quiz_maker.models.Marker). Order is preserved as given by the caller
-    (shuffling, if wanted, is the caller's responsibility).
+    """`markers` is an iterable of objects with .x/.y/.answer (e.g.
+    map_quiz_maker.models.Marker), where x and y are fractions of the image
+    in 0..1 from its top-left corner. Order is preserved as given by the
+    caller (shuffling, if wanted, is the caller's responsibility).
 
     `word_bank`, if given, is a list of answer strings to render as a word
     bank right after the image; omit or pass None/[] to leave it out.
@@ -42,8 +43,8 @@ def build_version_dict(
         "markers": [
             {
                 "display-number": index + 1,
-                "x-cm": marker.x_cm,
-                "y-cm": marker.y_cm,
+                "x": marker.x,
+                "y": marker.y,
                 "answer": marker.answer,
             }
             for index, marker in enumerate(markers)

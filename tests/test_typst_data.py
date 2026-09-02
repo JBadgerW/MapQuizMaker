@@ -11,8 +11,8 @@ from map_quiz_maker.export.typst_data import (
 
 @dataclass
 class FakeMarker:
-    x_cm: float
-    y_cm: float
+    x: float
+    y: float
     answer: str
 
 
@@ -33,8 +33,8 @@ def test_build_version_dict_shape():
     assert result["class"] == "Humanities IV"
     assert result["image"] == {"filename": "/tmp/map.jpg", "width-cm": 17.78, "height-cm": 13.0}
     assert result["markers"] == [
-        {"display-number": 1, "x-cm": 1.0, "y-cm": 2.0, "answer": "Athens"},
-        {"display-number": 2, "x-cm": 3.0, "y-cm": 4.0, "answer": "Sparta"},
+        {"display-number": 1, "x": 1.0, "y": 2.0, "answer": "Athens"},
+        {"display-number": 2, "x": 3.0, "y": 4.0, "answer": "Sparta"},
     ]
 
 

@@ -78,9 +78,30 @@ re-flow on a machine that lacks the font.
 - [x] (9/2) Typst now compiles from a self-contained sandbox directory that
 is also its project root, which retired the root="/" escape hatch.
 
-- [ ] Stage 3 -- give it a document: normalized marker coordinates, one
-authoritative state object with reconciling views, and a .mapquiz project
-file with New / Open / Save / Recent, a dirty flag, and undo.
+Stage 3 -- give it a document:
+
+- [x] (9/2) Marker positions stored as fractions of the image (0..1) with a
+top-left origin, replacing centimetres tied to a fixed print width and the
+bottom-left origin inherited from the old TikZ output.
+
+- [x] (9/2) QuizDocument is the single authoritative state object: metadata,
+image, markers, build options, dirty flag and undo/redo history. Panels hold
+no marker state and reconcile against it instead of rebuilding.
+
+- [x] (9/2) Saves as .etqw so a map quiz can be imported into the
+test_worksheet_generator app. Verified against that project's own schemas,
+loader and Typst renderer in tests/test_etqw.py (skipped if it isn't checked
+out beside this one).
+
+- [x] (9/2) Menu bar with New / Open / Open Recent / Save / Save As, a dirty
+marker in the title, an unsaved-changes prompt on close, and undo/redo.
+
+- [x] (9/2) Markers can be dragged to move them; the map and answer list are
+linked by selection; Enter advances to the next answer; the mouse wheel
+scrolls and ctrl+wheel zooms about the pointer.
+
+- [x] (9/2) Blank answers are warned about before a build and dropped from
+the word bank, which also de-duplicates.
 
 - [ ] Stage 4 -- make building feel safe: worker-thread builds with a
 progress dialog, separate answer-key PDF by default, friendly error

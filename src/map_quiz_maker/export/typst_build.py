@@ -23,7 +23,9 @@ from importlib.resources import as_file, files
 from pathlib import Path
 
 import typst
+from PIL import Image
 
+from map_quiz_maker.config import IMG_WIDTH_CM
 from map_quiz_maker.export.naming import sanitize_filename
 from map_quiz_maker.export.typst_data import (
     build_version_dict,
@@ -75,7 +77,7 @@ def _build_sandbox(image_file_path: Path):
     everything in it is removed on exit, so none of it reaches the user's
     quiz folder.
     """
-    with tempfile.TemporaryDirectory(prefix="map-quiz-maker-") as scratch:
+    with tempfile.TemporaryDirectory(prefix="map-quiz-maker-build-") as scratch:
         sandbox = Path(scratch)
         (sandbox / TEMPLATE_FILENAME).write_bytes(TEMPLATE_RESOURCE.read_bytes())
 
@@ -89,21 +91,19 @@ def _build_sandbox(image_file_path: Path):
             yield sandbox, image_name, [str(fonts_dir)]
 
 
-def build_quiz(
-    quiz_state,
-    image_file_path,
-    image_width_cm,
-    image_height_cm,
-    class_name,
-    title,
-    instructions,
-    num_versions=1,
-    separate_files=False,
-    include_word_bank=False,
-    output_dir=None,
-    filename_stem=None,
-) -> list[Path]:
-    """Builds one or more randomized quiz versions and compiles them to PDF.
+def image_size_cm(image_file_path) -> tuple[float, float]:
+    """The printed size of a map, in centimetres.
+
+    Width is fixed by the worksheet layout; height follows from the image's
+    own aspect ratio.
+    """
+    with Image.open(image_file_path) as image:
+        width_px, height_px = image.size
+    return IMG_WIDTH_CM, IMG_WIDTH_CM * height_px / width_px
+
+
+def build_quiz(doc, output_dir=None, filename_stem=None) -> list[Path]:
+    """Builds one or more randomized versions of `doc` and compiles them.
 
     Versions are always numbered 1..num_versions for the current build (no
     cross-build continuity or other numbering scheme). With
@@ -112,7 +112,7 @@ def build_quiz(
     `_v{n}` suffixed file; otherwise all versions are combined into one PDF.
 
     `filename_stem`, if given, is used verbatim as the base filename (e.g.
-    from a "Save As" dialog); otherwise it's derived from class_name+title.
+    from a "Save As" dialog); otherwise it's derived from class + title.
 
     `output_dir` defaults to the remembered/last-used quiz folder rather than
     a path relative to the working directory, so output never depends on
@@ -121,13 +121,23 @@ def build_quiz(
     Returns the list of PDF paths written (length 1 unless num_versions > 1
     and separate_files is True).
     """
+    if doc.image_path is None:
+        raise ValueError("This quiz has no map image yet.")
+
+    meta = doc.meta
     output_dir = Path(output_dir) if output_dir is not None else get_output_dir()
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    image_file_path = Path(image_file_path).resolve()
+    image_file_path = Path(doc.image_path).resolve()
+    image_width_cm, image_height_cm = image_size_cm(image_file_path)
 
-    base_markers = list(quiz_state.markers)
-    num_versions = max(1, num_versions)
+    class_name, title = meta.class_name, meta.title
+    instructions = meta.instructions
+    include_word_bank = meta.include_word_bank
+
+    base_markers = list(doc.markers)
+    num_versions = max(1, meta.num_versions)
+    separate_files = meta.separate_files
     base_filename = (
         filename_stem if filename_stem is not None else sanitize_filename(f"{class_name}_{title}")
     )
@@ -137,7 +147,9 @@ def build_quiz(
         random.shuffle(shuffled)
         word_bank = None
         if include_word_bank:
-            word_bank = [m.answer for m in shuffled]
+            # Blank answers would print as empty word-bank entries; a repeated
+            # answer is listed once, since the bank is a set of choices.
+            word_bank = list(dict.fromkeys(m.answer.strip() for m in shuffled if m.answer.strip()))
             random.shuffle(word_bank)
         return build_version_dict(
             class_name=class_name,

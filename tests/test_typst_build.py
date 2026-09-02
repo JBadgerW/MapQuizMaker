@@ -8,7 +8,7 @@ import pytest
 from PIL import Image
 
 from map_quiz_maker.export import typst_build
-from map_quiz_maker.models import QuizState
+from map_quiz_maker.models import QuizDocument
 
 
 @pytest.fixture
@@ -41,26 +41,27 @@ def compiled_versions(monkeypatch):
 
 
 @pytest.fixture
-def quiz_state():
-    state = QuizState()
-    for x, y, answer in [(2.0, 3.0, "Athens"), (8.0, 9.0, "Sparta")]:
-        marker = state.add_marker(x, y)
-        state.update_answer(marker.id, answer)
-    return state
+def quiz_state(image_path):
+    """A ready-to-build document. Named for the parameter every test uses."""
+    doc = QuizDocument()
+    doc.set_image(image_path)
+    for x, y, answer in [(0.2, 0.3, "Athens"), (0.8, 0.9, "Sparta")]:
+        marker = doc.add_marker(x, y)
+        doc.update_answer(marker.id, answer)
+    doc.update_meta(
+        class_name="Humanities IV",
+        title="Ancient Greece",
+        instructions="Label each numbered location.",
+    )
+    return doc
 
 
-def build(quiz_state, image_path, **overrides):
-    kwargs = {
-        "quiz_state": quiz_state,
-        "image_file_path": image_path,
-        "image_width_cm": 17.78,
-        "image_height_cm": 13.34,
-        "class_name": "Humanities IV",
-        "title": "Ancient Greece",
-        "instructions": "Label each numbered location.",
-    }
-    kwargs.update(overrides)
-    return typst_build.build_quiz(**kwargs)
+def build(doc, _image_path=None, output_dir=None, filename_stem=None, **meta):
+    if meta:
+        doc.update_meta(**meta)
+    return typst_build.build_quiz(
+        doc, output_dir=output_dir, filename_stem=filename_stem
+    )
 
 
 def test_writes_to_the_remembered_folder_not_the_working_directory(
@@ -146,12 +147,13 @@ def test_only_finished_pdfs_land_in_the_output_folder(quiz_state, image_path, tm
 
 
 def test_the_scratch_directory_is_cleaned_up(quiz_state, image_path, tmp_path):
-    leftovers = list(Path(tempfile.gettempdir()).glob("map-quiz-maker-*"))
-    assert leftovers == []
+    def build_scratch_dirs():
+        return set(Path(tempfile.gettempdir()).glob("map-quiz-maker-build-*"))
 
+    before = build_scratch_dirs()
     build(quiz_state, image_path, output_dir=tmp_path)
 
-    assert list(Path(tempfile.gettempdir()).glob("map-quiz-maker-*")) == []
+    assert build_scratch_dirs() == before, "the build left a scratch directory behind"
 
 
 def test_instructions_reach_the_generated_source(
