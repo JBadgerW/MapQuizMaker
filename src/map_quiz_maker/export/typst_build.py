@@ -1,18 +1,26 @@
 """Orchestrates the Typst-based quiz build: shuffles markers, marshals
 QuizState into the template's expected data shape, writes a generated
-per-build .typ file, and compiles it in-process via the bundled `typst`
-Python package -- no system LaTeX/Typst install required.
+per-build .typ file to a scratch directory, and compiles it in-process via
+the bundled `typst` Python package -- no system LaTeX/Typst install required.
+
+Only finished PDFs are written to the user's output folder. The generated
+.typ is a build intermediate and lives in a temporary directory that is
+removed afterwards, so the folder a teacher opens holds only the files they
+would actually print.
 """
 
 import random
-import shutil
+import tempfile
 from pathlib import Path
 
 import typst
 
-from map_quiz_maker.config import OUTPUT_DIR_NAME
 from map_quiz_maker.export.naming import sanitize_filename
-from map_quiz_maker.export.typst_data import build_version_dict, versions_to_typst_source
+from map_quiz_maker.export.typst_data import (
+    build_version_dict,
+    versions_to_typst_source,
+)
+from map_quiz_maker.settings import get_output_dir
 
 # src/map_quiz_maker/export/typst_build.py -> up 3 levels to the repo root,
 # where assets/templates/ lives.
@@ -55,16 +63,20 @@ def build_quiz(
     `filename_stem`, if given, is used verbatim as the base filename (e.g.
     from a "Save As" dialog); otherwise it's derived from class_name+title.
 
+    `output_dir` defaults to the remembered/last-used quiz folder rather than
+    a path relative to the working directory, so output never depends on
+    where the app happened to be launched from.
+
     Returns the list of PDF paths written (length 1 unless num_versions > 1
     and separate_files is True).
     """
-    output_dir = Path(output_dir) if output_dir is not None else Path(OUTPUT_DIR_NAME)
+    output_dir = Path(output_dir) if output_dir is not None else get_output_dir()
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    image_file_path = Path(image_file_path)
-    image_output_path = output_dir / image_file_path.name
-    if not image_output_path.exists():
-        shutil.copy(image_file_path, image_output_path)
+    # Referenced in place by absolute path. The build used to copy the image
+    # into output_dir first, which left a stray map .jpg next to every quiz
+    # for no benefit -- `root="/"` already lets Typst read it where it lies.
+    image_file_path = Path(image_file_path).resolve()
 
     base_markers = list(quiz_state.markers)
     num_versions = max(1, num_versions)
@@ -84,7 +96,7 @@ def build_quiz(
             title=title,
             version=str(version_number),
             instructions=instructions,
-            image_filename=str(image_output_path.resolve()),
+            image_filename=str(image_file_path),
             image_width_cm=image_width_cm,
             image_height_cm=image_height_cm,
             markers=shuffled,
@@ -93,17 +105,22 @@ def build_quiz(
 
     version_numbers = list(range(1, num_versions + 1))
 
-    if num_versions > 1 and separate_files:
-        pdf_paths = []
-        for n in version_numbers:
-            typ_path = output_dir / f"{base_filename}_v{n}.typ"
-            pdf_path = output_dir / f"{base_filename}_v{n}.pdf"
-            _compile([_make_version_dict(n)], typ_path, pdf_path)
-            pdf_paths.append(pdf_path)
-        return pdf_paths
+    with tempfile.TemporaryDirectory(prefix="map-quiz-maker-") as scratch:
+        scratch_dir = Path(scratch)
 
-    typ_path = output_dir / f"{base_filename}.typ"
-    pdf_path = output_dir / f"{base_filename}.pdf"
-    version_dicts = [_make_version_dict(n) for n in version_numbers]
-    _compile(version_dicts, typ_path, pdf_path)
-    return [pdf_path]
+        if num_versions > 1 and separate_files:
+            pdf_paths = []
+            for n in version_numbers:
+                pdf_path = output_dir / f"{base_filename}_v{n}.pdf"
+                _compile(
+                    [_make_version_dict(n)],
+                    scratch_dir / f"{base_filename}_v{n}.typ",
+                    pdf_path,
+                )
+                pdf_paths.append(pdf_path)
+            return pdf_paths
+
+        pdf_path = output_dir / f"{base_filename}.pdf"
+        version_dicts = [_make_version_dict(n) for n in version_numbers]
+        _compile(version_dicts, scratch_dir / f"{base_filename}.typ", pdf_path)
+        return [pdf_path]

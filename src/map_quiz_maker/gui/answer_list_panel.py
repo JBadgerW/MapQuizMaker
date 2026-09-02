@@ -10,6 +10,10 @@ class AnswerListPanel:
     def __init__(self, parent, on_answer_changed):
         self.on_answer_changed = on_answer_changed
 
+        # Held for the lifetime of the rows: a StringVar with no live Python
+        # reference can be garbage collected out from under its Entry.
+        self._answer_vars: dict[int, tk.StringVar] = {}
+
         self.frame = ttk.Frame(parent)
         self.frame.columnconfigure(0, weight=1)
         self.frame.rowconfigure(1, weight=1)
@@ -47,6 +51,7 @@ class AnswerListPanel:
     def refresh(self, markers):
         for widget in self.answer_list_frame.winfo_children():
             widget.destroy()
+        self._answer_vars.clear()
 
         self.answer_list_frame.columnconfigure(0, weight=1)
 
@@ -59,10 +64,20 @@ class AnswerListPanel:
             label = ttk.Label(frame, text=f"{marker.display_number}:", width=5)
             label.grid(row=0, column=0, sticky="w")
 
-            entry = ttk.Entry(frame)
+            # Write through on every keystroke rather than on <FocusOut>.
+            # refresh() destroys these rows whenever a marker is added, and
+            # clicking the map never moves focus off the entry, so a
+            # focus-out commit loses whatever was typed for the previous
+            # marker on every click-type-click cycle.
+            var = tk.StringVar(value=marker.answer)
+            var.trace_add(
+                "write",
+                lambda *_, mid=marker.id, v=var: self.on_answer_changed(mid, v.get()),
+            )
+            self._answer_vars[marker.id] = var
+
+            entry = ttk.Entry(frame, textvariable=var)
             entry.grid(row=0, column=1, sticky="ew")
-            entry.insert(0, marker.answer)
-            entry.bind('<FocusOut>', lambda e, mid=marker.id: self.on_answer_changed(mid, e.widget.get()))
 
         self.answer_list_frame.update_idletasks()
         self.answer_canvas.configure(scrollregion=self.answer_canvas.bbox("all"))

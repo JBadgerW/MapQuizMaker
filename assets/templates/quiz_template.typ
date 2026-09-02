@@ -76,9 +76,9 @@
 }
 
 #let word-bank-block(bank) = if bank.len() > 0 {
-  v(1em)
+  v(0.2em)
   text(weight: "bold")[Word Bank]
-  v(0.4em)
+  v(0.1em)
   grid(
     columns: (1fr, 1fr, 1fr),
     column-gutter: 2em,
@@ -109,11 +109,16 @@
 
   name-date-header(ver.class, ver.title, ver.version)
 
-  marker-overlay(ver.image, ver.markers)
+  // Instructions sit above the map, directly under the header, so they read
+  // before the thing they describe and don't compete with the word bank for
+  // the tight space between the image and the question list. Suppressed
+  // entirely when blank, so an unused field costs no vertical space.
+  if ver.instructions.trim() != "" {
+    emph(ver.instructions)
+    v(0.6em)
+  }
 
-  v(1em)
-  emph(ver.instructions)
-  v(1em)
+  marker-overlay(ver.image, ver.markers)
 
   word-bank-block(ver.word-bank)
 

@@ -38,3 +38,43 @@ the numbers are going to change on the quizzes anyway.
 
 - [x] (7/29) There should be an option to print a word-bank at the beginning of
 the questions section after the image.
+
+Architecture review follow-up (9/2)
+-----------------------------------
+
+Stage 1 -- stop the bleeding:
+
+- [x] (9/2) Answers committed on every keystroke instead of on focus-out.
+Adding a marker rebuilds the answer rows, so anything typed for the previous
+marker was silently destroyed on every click-type-click cycle.
+
+- [x] (9/2) Quizzes save to ~/Documents/Map Quizzes (remembering the
+last-used folder) instead of a path relative to the working directory, and a
+completion dialog says what was written with Open PDF / Show in Folder.
+
+- [x] (9/2) Instructions print above the map again, and are suppressed
+entirely when the field is blank.
+
+- [x] (9/2) sanitize_filename whitelists characters, so a title like
+"Rivers/Mountains" or "Ch. 4: Greece" can no longer corrupt the output path.
+
+- [x] (9/2) Pulled forward from stage 4: the generated .typ is written to a
+temp directory and the source image is referenced in place rather than
+copied, so the output folder holds only finished PDFs.
+
+Remaining stages:
+
+- [ ] Stage 2 -- make it installable: template and fonts inside the package,
+loaded via importlib.resources and shipped in the wheel. An installed copy
+currently cannot build at all.
+
+- [ ] Stage 3 -- give it a document: normalized marker coordinates, one
+authoritative state object with reconciling views, and a .mapquiz project
+file with New / Open / Save / Recent, a dirty flag, and undo.
+
+- [ ] Stage 4 -- make building feel safe: worker-thread builds with a
+progress dialog, separate answer-key PDF by default, friendly error
+messages, and seeded reproducible versions.
+
+- [ ] Stage 5 -- hand it to another teacher: marker dragging, wheel zoom and
+panning, a menu bar, and a packaged double-clickable build.

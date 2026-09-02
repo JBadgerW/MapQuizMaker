@@ -27,9 +27,24 @@ uv run map-quiz-maker
 2. Click on the image to mark a location; click an existing marker again to
    remove it (remaining markers renumber automatically).
 3. Type the answer for each marker in the answer list.
-4. Fill in Class / Title / Version / Instructions, and optionally set the
-   number of versions, whether to save each as its own file, and whether to
-   include a word bank.
-5. Click "Build Quiz". A worksheet + answer-key PDF is generated and
+4. Fill in Class / Title / Instructions, and optionally set the number of
+   versions, whether to save each as its own file, and whether to include a
+   word bank. Instructions print above the map; leave the field blank to
+   omit them.
+5. Click "Save Quiz". A worksheet + answer-key PDF is generated and
    auto-compiled via the bundled [Typst](https://typst.app/) engine (no
-   LaTeX install required) into `output/`.
+   LaTeX install required), then a dialog tells you what was written and
+   offers to open it.
+
+## Where quizzes are saved
+
+"Save Quiz" writes to `~/Documents/Map Quizzes` the first time. After that it
+reuses whichever folder you last saved to, so "Save As..." to a different
+folder becomes the new default. The remembered folder is kept in a small
+settings file (`~/.config/map-quiz-maker/settings.json` on Linux, the
+equivalent application-support folder on macOS and Windows); deleting it
+resets the destination to the default.
+
+Only finished PDFs are written there. The Typst source the app generates is
+a build intermediate and is compiled from a temporary folder, so your quiz
+folder holds nothing but the files you would actually print.

@@ -1,10 +1,13 @@
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 
+from map_quiz_maker import settings
+from map_quiz_maker.config import APP_NAME
 from map_quiz_maker.export.naming import sanitize_filename
 from map_quiz_maker.export.typst_build import build_quiz
 from map_quiz_maker.gui.answer_list_panel import AnswerListPanel
 from map_quiz_maker.gui.build_options_panel import BuildOptionsPanel
+from map_quiz_maker.gui.build_result_dialog import show_build_result
 from map_quiz_maker.gui.details_form_panel import DetailsFormPanel
 from map_quiz_maker.gui.image_canvas_panel import ImageCanvasPanel
 from map_quiz_maker.models import QuizState
@@ -13,7 +16,7 @@ from map_quiz_maker.models import QuizState
 class MainWindow:
     def __init__(self, root):
         self.root = root
-        self.root.title("Map Quiz Maker")
+        self.root.title(APP_NAME)
         self.quiz_state = QuizState()
         self.quiz_state.add_listener(self._on_quiz_state_changed)
 
@@ -75,17 +78,18 @@ class MainWindow:
 
     def _on_save_as(self) -> None:
         if not self.image_panel.image_file_path:
-            messagebox.showerror("Map Quiz Maker", "Load an image before saving a quiz.")
+            messagebox.showerror(APP_NAME, "Load an image before saving a quiz.")
             return
 
         suggested_name = sanitize_filename(
             f"{self.details_panel.get_class()}_{self.details_panel.get_title()}"
-        ).strip("_") or "quiz"
+        )
 
         chosen_path = filedialog.asksaveasfilename(
             defaultextension=".pdf",
             filetypes=[("PDF files", "*.pdf")],
             initialfile=suggested_name,
+            initialdir=str(settings.get_output_dir()),
         )
         if not chosen_path:
             return
@@ -95,11 +99,11 @@ class MainWindow:
 
     def _build(self, output_dir, filename_stem) -> None:
         if not self.image_panel.image_file_path:
-            messagebox.showerror("Map Quiz Maker", "Load an image before saving a quiz.")
+            messagebox.showerror(APP_NAME, "Load an image before saving a quiz.")
             return
 
         try:
-            build_quiz(
+            pdf_paths = build_quiz(
                 quiz_state=self.quiz_state,
                 image_file_path=self.image_panel.image_file_path,
                 image_width_cm=self.image_panel.img_width_cm,
@@ -114,4 +118,10 @@ class MainWindow:
                 filename_stem=filename_stem,
             )
         except Exception as exc:
-            messagebox.showerror("Map Quiz Maker", f"Failed to save quiz:\n{exc}")
+            messagebox.showerror(APP_NAME, f"Failed to save quiz:\n{exc}")
+            return
+
+        # Remember where this went so the next Save As opens in the same
+        # place, then say plainly what was written and where.
+        settings.set_output_dir(pdf_paths[0].parent)
+        show_build_result(self.root, pdf_paths)
