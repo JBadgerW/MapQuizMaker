@@ -32,9 +32,9 @@ def compiled_versions(monkeypatch):
     batches = []
     real_compile = typst_build._compile
 
-    def spy(versions, typ_path, pdf_path):
+    def spy(versions, *args, **kwargs):
         batches.append(versions)
-        real_compile(versions, typ_path, pdf_path)
+        real_compile(versions, *args, **kwargs)
 
     monkeypatch.setattr(typst_build, "_compile", spy)
     return batches
@@ -109,6 +109,14 @@ def test_separate_files_get_one_pdf_per_version(quiz_state, image_path, tmp_path
         "Humanities_IV_Ancient_Greece_v3.pdf",
     ]
     assert all(p.is_file() for p in pdfs)
+
+
+def test_output_embeds_the_bundled_font(quiz_state, image_path, tmp_path):
+    """System fonts are ignored at compile time, so the worksheet typesets
+    identically whether or not the machine has Linux Libertine installed."""
+    [pdf] = build(quiz_state, image_path, output_dir=tmp_path)
+
+    assert b"LinLibertine" in pdf.read_bytes()
 
 
 def test_blank_instructions_still_compile(quiz_state, image_path, tmp_path):

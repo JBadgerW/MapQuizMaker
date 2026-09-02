@@ -15,11 +15,24 @@ type of image identification: maps, anatomy charts, artwork, etc.
 
 ## Running
 
-This project uses [uv](https://docs.astral.sh/uv/) for package management.
+From a checkout, using [uv](https://docs.astral.sh/uv/):
 
 ```
 uv run map-quiz-maker
 ```
+
+Or install it as a standalone tool, which puts `map-quiz-maker` on your PATH
+and needs no checkout:
+
+```
+uv tool install .
+map-quiz-maker
+```
+
+There is nothing else to install. The Typst engine, the worksheet template,
+and the fonts the worksheet uses are all bundled, so quizzes typeset
+identically on any machine -- no LaTeX, no Typst install, and no dependency
+on which fonts happen to be present.
 
 ## How it works
 
@@ -48,3 +61,9 @@ resets the destination to the default.
 Only finished PDFs are written there. The Typst source the app generates is
 a build intermediate and is compiled from a temporary folder, so your quiz
 folder holds nothing but the files you would actually print.
+
+## Licence
+
+Map Quiz Maker is MIT licensed (`LICENSE.txt`). The bundled Linux Libertine
+fonts are redistributed under the SIL Open Font License 1.1; their licence
+travels with them in `src/map_quiz_maker/assets/fonts/LICENSE.txt`.

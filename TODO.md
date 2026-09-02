@@ -64,9 +64,19 @@ copied, so the output folder holds only finished PDFs.
 
 Remaining stages:
 
-- [ ] Stage 2 -- make it installable: template and fonts inside the package,
-loaded via importlib.resources and shipped in the wheel. An installed copy
-currently cannot build at all.
+Stage 2 -- make it installable:
+
+- [x] (9/2) Template and fonts moved into the package and loaded via
+importlib.resources, so they ship in the wheel. An installed copy could not
+build a quiz at all before this: the template path was derived by walking up
+from __file__, and assets/ was never packaged.
+
+- [x] (9/2) Linux Libertine bundled (regular/bold/italic/bold-italic, OFL)
+and passed to Typst with ignore_system_fonts, so worksheets no longer
+re-flow on a machine that lacks the font.
+
+- [x] (9/2) Typst now compiles from a self-contained sandbox directory that
+is also its project root, which retired the root="/" escape hatch.
 
 - [ ] Stage 3 -- give it a document: normalized marker coordinates, one
 authoritative state object with reconciling views, and a .mapquiz project

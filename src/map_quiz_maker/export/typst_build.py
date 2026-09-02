@@ -7,10 +7,19 @@ Only finished PDFs are written to the user's output folder. The generated
 .typ is a build intermediate and lives in a temporary directory that is
 removed afterwards, so the folder a teacher opens holds only the files they
 would actually print.
+
+Everything Typst reads -- the template, the map image, the generated source
+-- is assembled into that one temporary directory, which becomes the Typst
+project root. Nothing is addressed by a path derived from the source tree,
+so the build behaves identically from a checkout, an installed wheel, or a
+frozen single-file executable.
 """
 
 import random
+import shutil
 import tempfile
+from contextlib import contextmanager
+from importlib.resources import as_file, files
 from pathlib import Path
 
 import typst
@@ -22,20 +31,62 @@ from map_quiz_maker.export.typst_data import (
 )
 from map_quiz_maker.settings import get_output_dir
 
-# src/map_quiz_maker/export/typst_build.py -> up 3 levels to the repo root,
-# where assets/templates/ lives.
-REPO_ROOT = Path(__file__).resolve().parents[3]
-TEMPLATE_PATH = REPO_ROOT / "assets" / "templates" / "quiz_template.typ"
+# Package data, not filesystem paths: `files()` resolves through the import
+# system, so this works wherever the package is installed. Deriving the
+# template location by walking up from __file__ only ever worked inside a
+# source checkout, and the template was not shipped in the wheel at all.
+ASSETS = files("map_quiz_maker") / "assets"
+TEMPLATE_RESOURCE = ASSETS / "quiz_template.typ"
+FONTS_RESOURCE = ASSETS / "fonts"
+
+TEMPLATE_FILENAME = "quiz_template.typ"
+IMAGE_STEM = "map"
 
 
-def _compile(versions: list, typ_path: Path, pdf_path: Path) -> None:
+def _compile(
+    versions: list, typ_path: Path, pdf_path: Path, font_paths: list[str]
+) -> None:
     versions_source = versions_to_typst_source(versions)
     typ_path.write_text(
-        f'#import "{TEMPLATE_PATH.as_posix()}": render\n'
+        f'#import "{TEMPLATE_FILENAME}": render\n'
         f"#let versions = {versions_source}\n"
-        f"#render(versions)\n"
+        f"#render(versions)\n",
+        encoding="utf-8",
     )
-    typst.compile(str(typ_path), output=str(pdf_path), root="/")
+    typst.compile(
+        str(typ_path),
+        output=str(pdf_path),
+        # The sandbox is the project root, so the template and image resolve
+        # as plain relative names. This replaces a `root="/"` that existed
+        # only to let absolute paths through.
+        root=str(typ_path.parent),
+        font_paths=font_paths,
+        # Bundled fonts only. Falling through to system fonts is what let the
+        # worksheet re-flow on any machine without Linux Libertine installed.
+        ignore_system_fonts=True,
+    )
+
+
+@contextmanager
+def _build_sandbox(image_file_path: Path):
+    """Assembles a self-contained directory for Typst to compile from.
+
+    Yields `(sandbox_dir, image_name, font_paths)`. The directory and
+    everything in it is removed on exit, so none of it reaches the user's
+    quiz folder.
+    """
+    with tempfile.TemporaryDirectory(prefix="map-quiz-maker-") as scratch:
+        sandbox = Path(scratch)
+        (sandbox / TEMPLATE_FILENAME).write_bytes(TEMPLATE_RESOURCE.read_bytes())
+
+        image_name = IMAGE_STEM + image_file_path.suffix
+        shutil.copy(image_file_path, sandbox / image_name)
+
+        # `as_file` materializes the fonts on disk for the rare loader that
+        # doesn't already serve them from one (a zipimport, say); for an
+        # ordinary install it hands back the real directory.
+        with as_file(FONTS_RESOURCE) as fonts_dir:
+            yield sandbox, image_name, [str(fonts_dir)]
 
 
 def build_quiz(
@@ -73,9 +124,6 @@ def build_quiz(
     output_dir = Path(output_dir) if output_dir is not None else get_output_dir()
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Referenced in place by absolute path. The build used to copy the image
-    # into output_dir first, which left a stray map .jpg next to every quiz
-    # for no benefit -- `root="/"` already lets Typst read it where it lies.
     image_file_path = Path(image_file_path).resolve()
 
     base_markers = list(quiz_state.markers)
@@ -84,7 +132,7 @@ def build_quiz(
         filename_stem if filename_stem is not None else sanitize_filename(f"{class_name}_{title}")
     )
 
-    def _make_version_dict(version_number: int) -> dict:
+    def _make_version_dict(version_number: int, image_name: str) -> dict:
         shuffled = list(base_markers)
         random.shuffle(shuffled)
         word_bank = None
@@ -96,7 +144,7 @@ def build_quiz(
             title=title,
             version=str(version_number),
             instructions=instructions,
-            image_filename=str(image_file_path),
+            image_filename=image_name,
             image_width_cm=image_width_cm,
             image_height_cm=image_height_cm,
             markers=shuffled,
@@ -105,22 +153,23 @@ def build_quiz(
 
     version_numbers = list(range(1, num_versions + 1))
 
-    with tempfile.TemporaryDirectory(prefix="map-quiz-maker-") as scratch:
-        scratch_dir = Path(scratch)
-
+    with _build_sandbox(image_file_path) as (sandbox, image_name, font_paths):
         if num_versions > 1 and separate_files:
             pdf_paths = []
             for n in version_numbers:
                 pdf_path = output_dir / f"{base_filename}_v{n}.pdf"
                 _compile(
-                    [_make_version_dict(n)],
-                    scratch_dir / f"{base_filename}_v{n}.typ",
+                    [_make_version_dict(n, image_name)],
+                    sandbox / f"{base_filename}_v{n}.typ",
                     pdf_path,
+                    font_paths,
                 )
                 pdf_paths.append(pdf_path)
             return pdf_paths
 
         pdf_path = output_dir / f"{base_filename}.pdf"
-        version_dicts = [_make_version_dict(n) for n in version_numbers]
-        _compile(version_dicts, scratch_dir / f"{base_filename}.typ", pdf_path)
+        version_dicts = [_make_version_dict(n, image_name) for n in version_numbers]
+        _compile(
+            version_dicts, sandbox / f"{base_filename}.typ", pdf_path, font_paths
+        )
         return [pdf_path]

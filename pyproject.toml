@@ -1,9 +1,11 @@
 [project]
 name = "map-quiz-maker"
 version = "0.1.0"
-description = "Add your description here"
+description = "Make randomized printable map-identification quizzes from any image"
 readme = "README.md"
 requires-python = ">=3.12"
+license = "MIT"
+license-files = ["LICENSE.txt", "src/map_quiz_maker/assets/fonts/LICENSE.txt"]
 dependencies = [
     "pillow>=12.3.0",
     "ttkbootstrap>=2.0.1",

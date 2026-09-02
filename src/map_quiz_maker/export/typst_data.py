@@ -1,8 +1,8 @@
 """Pure data marshalling for the Typst export.
 
 Builds a plain Python dict describing one quiz version (matching the shape
-`assets/templates/quiz_template.typ` expects) and serializes it to Typst
-source syntax. Kept free of file I/O and the `typst` package itself so the
+`map_quiz_maker/assets/quiz_template.typ` expects) and serializes it to
+Typst source syntax. Kept free of file I/O and the `typst` package itself so
 data shape and string-escaping are easily unit-testable.
 """
 
