@@ -103,7 +103,7 @@ def _question_dicts(markers) -> list[dict]:
     ]
 
 
-def _stimulus_dict(markers, source_name: str, meta) -> dict:
+def _stimulus_dict(markers, source_name: str, meta, shuffle_seed: int) -> dict:
     """The image stimulus, plus this app's marker coordinates."""
     return {
         "kind": "image",
@@ -120,7 +120,11 @@ def _stimulus_dict(markers, source_name: str, meta) -> dict:
             "options": {
                 "num_versions": meta.num_versions,
                 "separate_files": meta.separate_files,
+                "combine_key": meta.combine_key,
             },
+            # Saved so "Version 3" keeps naming the same paper after the
+            # document is closed and reopened.
+            "shuffle_seed": shuffle_seed,
         },
     }
 
@@ -141,7 +145,9 @@ def _subsection_dict(doc, source_name: str) -> dict:
     }
     if meta.instructions.strip():
         subsection["instructions"] = escape_typst(meta.instructions.strip())
-    subsection["stimulus"] = _stimulus_dict(markers, source_name, meta)
+    subsection["stimulus"] = _stimulus_dict(
+        markers, source_name, meta, doc.shuffle_seed
+    )
     subsection["show_word_bank"] = meta.include_word_bank
     return subsection
 
@@ -327,6 +333,10 @@ def load_document(path) -> QuizDocument:
     doc.etqw_source_id = manifest.get("source_id")
     doc.created_at = manifest.get("created_at")
 
+    seed = extension.get("shuffle_seed")
+    if isinstance(seed, int):
+        doc.shuffle_seed = seed
+
     options = extension.get("options") or {}
     doc.update_meta(
         class_name=manifest.get("course") or "",
@@ -336,6 +346,7 @@ def load_document(path) -> QuizDocument:
         include_word_bank=bool(subsection.get("show_word_bank", False)),
         num_versions=max(1, int(options.get("num_versions", 1) or 1)),
         separate_files=bool(options.get("separate_files", False)),
+        combine_key=bool(options.get("combine_key", False)),
     )
 
     markers = []

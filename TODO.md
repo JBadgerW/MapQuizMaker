@@ -103,9 +103,29 @@ scrolls and ctrl+wheel zooms about the pointer.
 - [x] (9/2) Blank answers are warned about before a build and dropped from
 the word bank, which also de-duplicates.
 
-- [ ] Stage 4 -- make building feel safe: worker-thread builds with a
-progress dialog, separate answer-key PDF by default, friendly error
-messages, and seeded reproducible versions.
+Stage 4 -- make building feel safe:
+
+- [x] (9/2) Builds run on a worker thread with a modal progress dialog that
+reports each file and can be cancelled. The window used to freeze with no
+sign of life, so the natural response was to click Build again.
+
+- [x] (9/2) The answer key is its own PDF by default, with an option to
+combine. It used to be bound into the worksheet as page two of every
+version, so printing thirty copies handed out the answers.
+
+- [x] (9/2) Version N is reproducible: the shuffle is seeded from the
+document rather than global random, the seed is saved in the .etqw file, and
+each key page carries a short build code.
+
+- [x] (9/2) Build failures are explained in a sentence naming the cause and
+what to do -- a moved map image, a locked or unwritable folder, a full disk,
+an unreadable image format -- instead of showing raw exception text.
+
+- [x] (9/2) The running header shows the page number rather than a hardcoded
+"of 2", which became a lie once a question list ran to a third page.
+
+- [x] (9/2) Printed markers get the same white disc as the canvas and the
+.etqw image, so a number no longer disappears against dark terrain.
 
 - [ ] Stage 5 -- hand it to another teacher: marker dragging, wheel zoom and
 panning, a menu bar, and a packaged double-clickable build.

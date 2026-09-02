@@ -101,8 +101,9 @@ def test_an_installed_copy_can_build_a_quiz(tmp_path):
         "doc.update_answer(marker.id, 'Athens')\n"
         "doc.update_meta(class_name='Humanities IV', title='Ancient Greece',\n"
         "                instructions='Label each numbered location.')\n"
-        "[pdf] = build_quiz(doc, output_dir=out)\n"
-        "print(pdf)\n",
+        "worksheet, key = build_quiz(doc, output_dir=out)\n"
+        "assert key.name.endswith('_KEY.pdf'), key\n"
+        "print(worksheet)\n",
         encoding="utf-8",
     )
 

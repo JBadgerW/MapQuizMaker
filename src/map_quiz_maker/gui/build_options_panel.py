@@ -39,6 +39,17 @@ class BuildOptionsPanel:
             self.frame, text="Include word bank", variable=self.word_bank_var,
         ).grid(row=2, column=0, columnspan=2, sticky="w", padx=5, pady=4)
 
+        # Off by default: the answer key used to be bound into the worksheet
+        # PDF with no way to separate it, so printing thirty copies handed
+        # out the answers on page two.
+        self.combine_key_var = tk.BooleanVar(value=False)
+        self.combine_key_var.trace_add("write", lambda *_: self._changed())
+        ttk.Checkbutton(
+            self.frame,
+            text="Put the answer key in the same PDF",
+            variable=self.combine_key_var,
+        ).grid(row=3, column=0, columnspan=2, sticky="w", padx=5, pady=4)
+
     def _num_versions(self) -> int:
         """A spinbox can hold text mid-edit, so an unreadable value means 1."""
         try:
@@ -53,6 +64,7 @@ class BuildOptionsPanel:
             num_versions=self._num_versions(),
             separate_files=bool(self.separate_files_var.get()),
             include_word_bank=bool(self.word_bank_var.get()),
+            combine_key=bool(self.combine_key_var.get()),
         )
 
     def load(self, meta) -> None:
@@ -61,5 +73,6 @@ class BuildOptionsPanel:
             self.num_versions_var.set(meta.num_versions)
             self.separate_files_var.set(meta.separate_files)
             self.word_bank_var.set(meta.include_word_bank)
+            self.combine_key_var.set(meta.combine_key)
         finally:
             self._loading = False

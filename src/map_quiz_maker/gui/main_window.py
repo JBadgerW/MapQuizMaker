@@ -16,7 +16,9 @@ from map_quiz_maker.etqw import FILE_SUFFIX, EtqwError, load_document, save_docu
 from map_quiz_maker.export.naming import sanitize_filename
 from map_quiz_maker.export.typst_build import build_quiz
 from map_quiz_maker.gui.answer_list_panel import AnswerListPanel
+from map_quiz_maker.gui.build_errors import describe as describe_build_error
 from map_quiz_maker.gui.build_options_panel import BuildOptionsPanel
+from map_quiz_maker.gui.build_progress_dialog import BuildProgressDialog
 from map_quiz_maker.gui.build_result_dialog import show_build_result
 from map_quiz_maker.gui.details_form_panel import DetailsFormPanel
 from map_quiz_maker.gui.image_canvas_panel import ImageCanvasPanel
@@ -431,18 +433,27 @@ class MainWindow:
     def _build(self, output_dir, filename_stem) -> None:
         if not self._ready_to_build():
             return
+
+        def run(on_progress, should_cancel):
+            return build_quiz(
+                self.doc,
+                output_dir=output_dir,
+                filename_stem=filename_stem,
+                on_progress=on_progress,
+                should_cancel=should_cancel,
+            )
+
         try:
-            pdf_paths = build_quiz(
-                self.doc, output_dir=output_dir, filename_stem=filename_stem
-            )
-        except Exception as exc:  # noqa: BLE001 - see below
-            # Deliberately broad: a build runs PIL, Typst and the filesystem,
-            # and the teacher needs a dialog rather than a traceback in a
-            # terminal they cannot see. Narrowing this would let some new
-            # failure mode kill the window silently.
+            pdf_paths = BuildProgressDialog(self.root, run).run()
+        except Exception as exc:  # noqa: BLE001 - see build_errors.describe
             messagebox.showerror(
-                APP_NAME, f"This quiz couldn't be built:\n{exc}", parent=self.root
+                APP_NAME,
+                describe_build_error(exc, self.doc.image_path),
+                parent=self.root,
             )
+            return
+
+        if not pdf_paths:  # cancelled
             return
 
         settings.set_output_dir(pdf_paths[0].parent)

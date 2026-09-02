@@ -50,7 +50,8 @@ on which fonts happen to be present.
    edit later.
 6. **Build Quiz PDF** (Ctrl+B) generates the shuffled versions and compiles
    them via the bundled [Typst](https://typst.app/) engine (no LaTeX install
-   required), then tells you what was written and offers to open it.
+   required), then tells you what was written and offers to open it. Long
+   builds show progress and can be cancelled; the window stays responsive.
 
 Selecting a location in one view highlights it in the other, so with thirty
 markers you can still tell which row belongs to which point on the map.
@@ -89,6 +90,25 @@ resets the destination to the default.
 Only finished PDFs are written there. The Typst source the app generates is
 a build intermediate and is compiled from a temporary folder, so your quiz
 folder holds nothing but the files you would actually print.
+
+## The answer key
+
+The key is written as its own PDF, `<name>_KEY.pdf`, so printing the
+worksheets cannot hand out the answers. However the worksheets are split,
+the key stays one file -- it is your reference copy. Tick "Put the answer
+key in the same PDF" if you would rather have one document.
+
+## Reproducible versions
+
+Version 3 of a given quiz is the same paper every time you build it. The
+shuffle comes from a seed stored in the `.etqw` file rather than from chance,
+so a student who asks about the version they sat can be handed that exact
+sheet again. Each key page carries a small build code (`71e1df-v1`) naming
+the shuffle that produced it.
+
+Editing the quiz -- adding a location, changing an answer -- changes what
+every version contains, as you would expect. What is guaranteed is that
+rebuilding an unchanged quiz reproduces it exactly.
 
 ## Licence
 

@@ -215,3 +215,118 @@ def test_open_and_save_round_trip_through_the_window(window, map_image, tmp_path
     assert len(rows(window)) == 1
     assert len(window.image_panel._marker_items) == 1
     assert not window.doc.dirty
+
+
+# ---------------------------------------------------------------------------
+# The threaded build
+# ---------------------------------------------------------------------------
+
+
+def test_progress_dialog_runs_a_build_on_a_worker_thread(window):
+    """Tk is not thread-safe, so the build must not touch widgets itself."""
+    import threading
+
+    from map_quiz_maker.gui.build_progress_dialog import BuildProgressDialog
+
+    ran_on = {}
+
+    def work(on_progress, _should_cancel):
+        ran_on["thread"] = threading.current_thread()
+        on_progress(0, 2, "Building the worksheet...")
+        on_progress(1, 2, "Building the answer key...")
+        return ["a.pdf", "b.pdf"]
+
+    result = BuildProgressDialog(window.root, work).run()
+
+    assert result == ["a.pdf", "b.pdf"]
+    assert ran_on["thread"] is not threading.main_thread()
+
+
+def test_progress_dialog_reraises_a_failed_build(window):
+    from map_quiz_maker.gui.build_progress_dialog import BuildProgressDialog
+
+    def work(_on_progress, _should_cancel):
+        raise OSError("disk full")
+
+    with pytest.raises(OSError, match="disk full"):
+        BuildProgressDialog(window.root, work).run()
+
+
+def test_cancelling_returns_no_paths(window):
+    import time
+
+    from map_quiz_maker.export.typst_build import BuildCancelled
+    from map_quiz_maker.gui.build_progress_dialog import BuildProgressDialog
+
+    def work(on_progress, should_cancel):
+        on_progress(0, 3, "Building version 1 of 3...")
+        for _ in range(400):  # a bounded wait, so a bug fails instead of hanging
+            if should_cancel():
+                raise BuildCancelled
+            time.sleep(0.01)
+        return ["never.pdf"]
+
+    dialog = BuildProgressDialog(window.root, work)
+    # Scheduled from the main thread, which is where every widget call belongs.
+    dialog.dialog.after(80, dialog.cancel)
+
+    assert dialog.run() is None
+
+
+def test_the_dialog_closes_itself_when_the_build_finishes(window):
+    from map_quiz_maker.gui.build_progress_dialog import BuildProgressDialog
+
+    dialog = BuildProgressDialog(window.root, lambda *_: ["a.pdf"])
+    dialog.run()
+
+    assert not dialog.dialog.winfo_exists()
+
+
+def test_a_real_build_writes_a_worksheet_and_a_separate_key(
+    window, map_image, tmp_path, monkeypatch
+):
+    """The whole path: window -> progress dialog -> worker thread -> Typst."""
+    from map_quiz_maker.gui import main_window
+
+    shown = []
+    # The result dialog is modal and would wait for a click that never comes.
+    monkeypatch.setattr(main_window, "show_build_result", lambda _root, paths: shown.append(paths))
+
+    window.image_panel.show_image(map_image)
+    window.doc.set_image(map_image)
+    window.doc.update_answer(window.doc.add_marker(0.3, 0.4).id, "Athens")
+    window._meta_changed(title="Greece", num_versions=2)
+
+    window._build(output_dir=tmp_path, filename_stem="greece")
+    window.root.update()
+
+    assert sorted(p.name for p in tmp_path.glob("*.pdf")) == [
+        "greece.pdf",
+        "greece_KEY.pdf",
+    ]
+    assert shown, "the user must be told where the quiz went"
+
+
+def test_a_build_failure_reaches_the_user_as_a_message(
+    window, map_image, tmp_path, monkeypatch
+):
+    from map_quiz_maker.gui import main_window
+
+    errors = []
+    monkeypatch.setattr(
+        main_window.messagebox,
+        "showerror",
+        lambda _title, message, **_kw: errors.append(message),
+    )
+    monkeypatch.setattr(
+        main_window, "build_quiz", lambda *a, **k: (_ for _ in ()).throw(OSError("disk full"))
+    )
+
+    window.image_panel.show_image(map_image)
+    window.doc.set_image(map_image)
+    window.doc.update_answer(window.doc.add_marker(0.3, 0.4).id, "Athens")
+
+    window._build(output_dir=tmp_path, filename_stem="greece")
+    window.root.update()
+
+    assert errors and "disk full" in errors[0]

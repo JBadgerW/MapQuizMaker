@@ -18,9 +18,16 @@ from map_quiz_maker.desktop import open_file, show_in_folder
 MAX_LISTED_FILES = 6
 
 
+KEY_SUFFIX = "_KEY"
+
+
 def _describe(pdf_paths) -> str:
     if len(pdf_paths) == 1:
         return f"Saved {pdf_paths[0].name}"
+    worksheets = [p for p in pdf_paths if not p.stem.endswith(KEY_SUFFIX)]
+    if len(worksheets) < len(pdf_paths):
+        sheets = "worksheet" if len(worksheets) == 1 else "worksheets"
+        return f"Saved {len(worksheets)} {sheets} and an answer key"
     return f"Saved {len(pdf_paths)} files"
 
 

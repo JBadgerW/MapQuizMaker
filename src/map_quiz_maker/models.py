@@ -12,6 +12,7 @@ Views observe this object and reconcile against it; they never hold marker
 state of their own.
 """
 
+import secrets
 from collections.abc import Callable
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -49,6 +50,7 @@ class QuizMeta:
     num_versions: int = 1
     separate_files: bool = False
     include_word_bank: bool = False
+    combine_key: bool = False  # keep the answer key in the worksheet PDF
 
 
 @dataclass
@@ -79,6 +81,12 @@ class QuizDocument:
         self._undo: list[_Snapshot] = []
         self._redo: list[_Snapshot] = []
         self._dirty = False
+
+        # Fixes which shuffle each version number gets. Minted per document
+        # and saved with it, so "Version 3" names the same paper on every
+        # rebuild -- a student asking about the version they sat can be given
+        # that exact sheet again. See export.typst_build.rng_for_version.
+        self.shuffle_seed: int = secrets.randbits(48)
 
         # Identity assigned on first save; see map_quiz_maker.etqw.
         self.etqw_id: str | None = None

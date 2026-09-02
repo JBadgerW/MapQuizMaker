@@ -43,10 +43,26 @@
   #v(1em)
 ]
 
+// Marker styling, kept in step with map_quiz_maker/render.py, which draws
+// the same badge onto the image that travels in an .etqw bundle.
+#let marker-ink = rgb("#c0392b")
+#let marker-radius = 0.30cm
+
+// A number on its own disappears against dark terrain or a coastline. The
+// disc gives it a constant background whatever the map does underneath, and
+// sizes to two digits at the default 50-marker ceiling.
+#let marker-badge(number) = circle(
+  radius: marker-radius,
+  fill: white,
+  stroke: 0.6pt + marker-ink,
+  inset: 0pt,
+  align(center + horizon, text(size: 8pt, weight: "bold", fill: marker-ink)[#number]),
+)
+
 #let marker-overlay(image-info, markers) = box(width: image-info.width-cm * 1cm, {
   image(image-info.filename, width: 100%)
   for m in markers {
-    let label = text(weight: "bold")[#m.display-number]
+    let label = marker-badge(m.display-number)
     // `place(top+left, dx:, dy:)` anchors the label's top-left corner at
     // (dx, dy). The app's historical TikZ/Tkinter placement centers the
     // label ON the clicked point instead, so its size is measured and
@@ -91,22 +107,22 @@
   )
 }
 
-#let render-version(ver) = {
-  counter(page).update(1)
+// Only from the second page on; a one-page worksheet needs no header. The
+// page total used to be hardcoded as "of 2", which became a lie the moment a
+// long question list ran to a third page, so it is simply the page number.
+#let running-header(ver) = context {
+  if counter(page).get().first() > 1 {
+    grid(
+      columns: (1fr, auto),
+      [#ver.class #ver.title],
+      [Page #counter(page).display()],
+    )
+  }
+}
 
-  set page(
-    paper: "us-letter",
-    margin: 0.75in,
-    header: context {
-      if counter(page).get().first() > 1 {
-        grid(
-          columns: (1fr, auto),
-          [#ver.class #ver.title],
-          [Page #counter(page).display() of 2],
-        )
-      }
-    },
-  )
+#let render-worksheet(ver) = {
+  counter(page).update(1)
+  set page(paper: "us-letter", margin: 0.75in, header: running-header(ver))
 
   name-date-header(ver.class, ver.title, ver.version)
 
@@ -127,8 +143,11 @@
     numbering: "1.",
     ..ver.markers.map(m => blank-line()),
   ))
+}
 
-  pagebreak()
+#let render-key(ver) = {
+  counter(page).update(1)
+  set page(paper: "us-letter", margin: 0.75in, header: running-header(ver))
 
   [#ver.class]
   linebreak()
@@ -144,14 +163,32 @@
     numbering: "1.",
     ..ver.markers.map(m => [#m.answer]),
   ))
+
+  // The build code identifies which shuffle produced this sheet, so a
+  // student's paper can be matched back to a rebuild of the same version.
+  // Teacher-facing only -- it appears on the key, never on the worksheet.
+  if ver.at("code", default: "") != "" {
+    place(bottom + right, text(size: 8pt, fill: luma(130))[#ver.code])
+  }
 }
 
-#let render(versions) = {
+// `part` selects which halves of each version to emit:
+//   "worksheet" -- student copies only (the default output)
+//   "key"       -- answer keys only, so the key is a separate PDF that
+//                  cannot be handed out by accident with the worksheets
+//   "both"      -- worksheet then key per version, in one document
+#let render(versions, part: "worksheet") = {
   set text(font: "Linux Libertine O", size: 12pt)
   set par(justify: false, leading: 0.65em)
 
-  for (i, ver) in versions.enumerate() {
-    if i > 0 { pagebreak() }
-    render-version(ver)
+  let parts = if part == "both" { ("worksheet", "key") } else { (part,) }
+
+  let first = true
+  for ver in versions {
+    for which in parts {
+      if not first { pagebreak() }
+      first = false
+      if which == "worksheet" { render-worksheet(ver) } else { render-key(ver) }
+    }
   }
 }
